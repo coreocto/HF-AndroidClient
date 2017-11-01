@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/pref_client">
+        <EditTextPreference
+                android:key="client.key1"
+                android:title="@string/pref_client_key1" />
+        <EditTextPreference
+                android:key="client.key2"
+                android:title="@string/pref_client_key2" />
+        <Preference
+                android:key="prefClientGenKeysBtn"
+                android:title="@string/pref_client_genkeys" />
+        <!--<Preference-->
+        <!--android:title="Acts like a button"-->
+        <!--android:summary="This is a cool button"-->
+        <!--android:key="prefClientGenKeysBtn" android:layout="@xml/pref_button"/>-->
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_server">
+        <EditTextPreference
+                android:key="server.hostname"
+                android:title="@string/pref_server_hostname" />
+        <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="server.reportStat"
+                android:title="@string/pref_server_report_stat" />
+    </PreferenceCategory>
+</PreferenceScreen>

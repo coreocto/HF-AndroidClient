@@ -1,4 +1,20 @@
 <resources>
     <string name="app_name">HF-AndroidClient</string>
     <string name="action_settings">Settings</string>
+    <string name="title_activity_nav_dwr">NavDwrActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="pref_client">Client Settings</string>
+    <string name="pref_client_key1">Key1</string>
+    <string name="pref_client_key2">Key2</string>
+    <string name="pref_client_genkeys">Generate Keys</string>
+
+    <string name="pref_server">Server Settings</string>
+    <string name="pref_server_hostname">Hostname</string>
+    <string name="pref_server_report_stat">Report statistics</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
