@@ -23,6 +23,9 @@ android {
                 cppFlags "-frtti -fexceptions"
             }
         }
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
     }
     buildTypes {
         release {
@@ -58,7 +61,7 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
     compile 'com.google.android.gms:play-services-auth:11.4.0'
     compile 'com.google.android.gms:play-services-drive:11.4.0'
-    compile 'com.github.coreocto:HF-ClientLib:3db8930195'
+    compile 'com.github.coreocto:HF-ClientLib:6128278722'
     testCompile 'junit:junit:4.12'
 }
 

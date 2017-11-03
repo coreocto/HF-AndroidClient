@@ -17,7 +17,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,14 +34,13 @@ import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.fragment.AddFragment;
 import org.coreocto.dev.hf.androidclient.fragment.SearchFragment;
 import org.coreocto.dev.hf.androidclient.fragment.SettingsFragment;
+import org.coreocto.dev.hf.androidclient.util.AndroidAes128CbcImpl;
+import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
+import org.coreocto.dev.hf.androidclient.util.AndroidMd5Impl;
+import org.coreocto.dev.hf.androidclient.util.NativeAes128CbcImpl;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.commonlib.suise.util.SuiseUtil;
-import org.coreocto.dev.hf.commonlib.util.IBase64;
 import org.coreocto.dev.hf.commonlib.util.ILogger;
-import org.coreocto.dev.hf.commonlib.util.IMd5;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class NavDwrActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -201,53 +199,8 @@ public class NavDwrActivity extends AppCompatActivity
             }
         };
 
-        SuiseUtil suiseUtil = new SuiseUtil(new IBase64() {
-            @Override
-            public String encodeToString(byte[] bytes) {
-                return Base64.encodeToString(bytes, Base64.NO_WRAP);
-            }
-
-            @Override
-            public byte[] decodeToByteArray(String s) {
-                return Base64.decode(s, Base64.NO_WRAP);
-            }
-        }, new IMd5() {
-
-            MessageDigest md5 = null;
-
-            private MessageDigest getMd5() throws NoSuchAlgorithmException {
-                if (md5 == null) {
-                    md5 = MessageDigest.getInstance("MD5");
-                }
-                return md5;
-            }
-
-            @Override
-            public byte[] getHash(String s) {
-                if (s == null) {
-                    return null;
-                } else {
-                    return getHash(s.getBytes());
-                }
-            }
-
-            @Override
-            public byte[] getHash(byte[] bytes) {
-
-                if (bytes == null) {
-                    return null;
-                }
-
-                byte[] result = null;
-                try {
-                    MessageDigest md = getMd5();
-                    result = md.digest(bytes);
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
-                return result;
-            }
-        });
+        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new AndroidAes128CbcImpl());
+//        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new NativeAes128CbcImpl());    //there are memory leak problem when using the native aes impl, i will fix it later
 
         if ((key1 == null || key1.isEmpty()) && (key2 == null || key2.isEmpty())) {
             appSettings.setSuiseClient(new SuiseClient(suiseLogger, suiseUtil));

@@ -323,8 +323,6 @@ public class AddFragment extends Fragment {
                                                 .post(requestBody)
                                                 .build();
 
-                                        //Request request = new Request.Builder().url(url,)
-
                                         final DocUploadStopWatch uploadStopWatch = new DocUploadStopWatch(docId, 0);
 
                                         httpClient.newCall(request).enqueue(new Callback() {
