@@ -3,23 +3,30 @@ package org.coreocto.dev.hf.androidclient.bean;
 import android.content.SharedPreferences;
 import com.google.gson.Gson;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
+import org.coreocto.dev.hf.commonlib.util.Registry;
 
 public class AppSettings {
-    public static final String CLIENT_KEY1 = "client.key1";
-    public static final String CLIENT_KEY2 = "client.key2";
-    public static final String SERVER_HOSTNAME = "server.hostname";
-    public static final String SERVER_RPT_STAT = "server.reportStat";
+
     private static AppSettings instance;
     private SuiseClient suiseClient;
     private SharedPreferences appPref;
     private Gson gson;
     private String idToken;
+    private Registry registry;
 
     public static AppSettings getInstance() {
         if (instance == null) {
             instance = new AppSettings();
         }
         return instance;
+    }
+
+    public void setRegistry(Registry registry) {
+        this.registry = registry;
+    }
+
+    public Registry getRegistry() {
+        return registry;
     }
 
     public String getIdToken() {

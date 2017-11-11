@@ -29,6 +29,7 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.drive.Drive;
 import com.google.gson.Gson;
+import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.fragment.AddFragment;
@@ -37,10 +38,10 @@ import org.coreocto.dev.hf.androidclient.fragment.SettingsFragment;
 import org.coreocto.dev.hf.androidclient.util.AndroidAes128CbcImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.AndroidMd5Impl;
-import org.coreocto.dev.hf.androidclient.util.NativeAes128CbcImpl;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.commonlib.suise.util.SuiseUtil;
 import org.coreocto.dev.hf.commonlib.util.ILogger;
+import org.coreocto.dev.hf.commonlib.util.Registry;
 
 public class NavDwrActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -189,8 +190,8 @@ public class NavDwrActivity extends AppCompatActivity
         appSettings.setAppPref(appPref);
         appSettings.setGson(new Gson());
 
-        String key1 = appPref.getString(AppSettings.CLIENT_KEY1, null);
-        String key2 = appPref.getString(AppSettings.CLIENT_KEY2, null);
+        String key1 = appPref.getString(Constants.PREF_CLIENT_KEY1, null);
+        String key2 = appPref.getString(Constants.PREF_CLIENT_KEY2, null);
 
         ILogger suiseLogger = new ILogger() {
             @Override
@@ -199,13 +200,22 @@ public class NavDwrActivity extends AppCompatActivity
             }
         };
 
-        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new AndroidAes128CbcImpl());
+        Registry registry = new Registry();
+        registry.setBase64(new AndroidBase64Impl());
+        registry.setMd5(new AndroidMd5Impl());
+        registry.setAes128Cbc(new AndroidAes128CbcImpl());
+        registry.setLogger(suiseLogger);
+
+        byte[] key1Bytes = registry.getBase64().decodeToByteArray(key1);
+        byte[] key2Bytes = registry.getBase64().decodeToByteArray(key2);
+
+        SuiseUtil suiseUtil = new SuiseUtil(registry);
 //        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new NativeAes128CbcImpl());    //there are memory leak problem when using the native aes impl, i will fix it later
 
         if ((key1 == null || key1.isEmpty()) && (key2 == null || key2.isEmpty())) {
-            appSettings.setSuiseClient(new SuiseClient(suiseLogger, suiseUtil));
+            appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil));
         } else {
-            appSettings.setSuiseClient(new SuiseClient(suiseLogger, suiseUtil, key1, key2));
+            appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil, key1Bytes, key2Bytes));
         }
         //end
     }

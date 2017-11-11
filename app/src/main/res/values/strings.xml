@@ -10,6 +10,7 @@
     <string name="pref_client_key1">Key1</string>
     <string name="pref_client_key2">Key2</string>
     <string name="pref_client_genkeys">Generate Keys</string>
+    <string name="pref_client_datadir">Data Directory</string>
 
     <string name="pref_server">Server Settings</string>
     <string name="pref_server_hostname">Hostname</string>

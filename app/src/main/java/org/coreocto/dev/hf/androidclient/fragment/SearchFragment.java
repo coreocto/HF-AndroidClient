@@ -19,9 +19,11 @@ import android.widget.EditText;
 import android.widget.ListView;
 import com.google.gson.Gson;
 import okhttp3.*;
+import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.bean.SearchResponse;
+import org.coreocto.dev.hf.androidclient.view.SearchResultAdapter;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 
 import java.io.IOException;
@@ -89,7 +91,7 @@ public class SearchFragment extends Fragment {
 
         this.fileList = new ArrayList<>();
 
-        this.arrayAdapter = new ArrayAdapter<>(ctx, android.R.layout.simple_list_item_1, fileList);
+        this.arrayAdapter = new SearchResultAdapter(ctx, android.R.layout.simple_list_item_1, fileList);
 
         lvFileList.setAdapter(arrayAdapter);
 
@@ -154,7 +156,7 @@ public class SearchFragment extends Fragment {
 
                 RequestBody requestBody = formBodyBuilder.build();
 
-                final String url = appSettings.getAppPref().getString(AppSettings.SERVER_HOSTNAME, null) + "/search";
+                final String url = appSettings.getAppPref().getString(Constants.PREF_SERVER_HOSTNAME, null) + "/search";
 
                 Request request = new Request.Builder()
                         .url(url)

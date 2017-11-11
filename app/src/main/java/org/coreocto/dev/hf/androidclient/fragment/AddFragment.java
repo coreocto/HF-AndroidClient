@@ -1,5 +1,6 @@
 package org.coreocto.dev.hf.androidclient.fragment;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.Uri;
@@ -18,18 +19,17 @@ import android.widget.Button;
 import android.widget.ListView;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.drive.Drive;
-import com.google.android.gms.drive.DriveApi;
-import com.google.android.gms.drive.DriveFolder;
-import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.drive.*;
 import com.google.gson.Gson;
 import okhttp3.*;
+import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.benchmark.AddTokenStopWatch;
 import org.coreocto.dev.hf.androidclient.benchmark.DocEncryptStopWatch;
 import org.coreocto.dev.hf.androidclient.benchmark.DocUploadStopWatch;
+import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.commonlib.suise.bean.AddTokenResult;
 
@@ -65,7 +65,12 @@ public class AddFragment extends Fragment {
                         Log.d(TAG, "Error while trying to create the file");
                         return;
                     }
-                    Log.d(TAG, "Created a file with content: " + result.getDriveFile().getDriveId());
+
+                    DriveId driveId = result.getDriveFile().getDriveId();
+                    driveId.getResourceId();
+
+                    Log.d(TAG, "Created a file with content: " + driveId);
+                    Log.d(TAG, "Resource Id: " + driveId.getResourceId());
                 }
             };
     private OnFragmentInteractionListener mListener;
@@ -105,11 +110,13 @@ public class AddFragment extends Fragment {
 
         final Context ctx = getActivity();
 
+        final AppSettings appSettings = AppSettings.getInstance();
+
         this.uploadFileList = new ArrayList<>();
 
         {
             String extStore = Environment.getExternalStorageDirectory().toString();
-            File dir = new File(extStore + "/Suise");
+            File dir = new File(extStore + File.separator + appSettings.getAppPref().getString(Constants.PREF_CLIENT_DATA_DIR, null));
             File[] docList = dir.listFiles();
             for (File doc : docList) {
                 this.uploadFileList.add(doc.getName());
@@ -128,23 +135,48 @@ public class AddFragment extends Fragment {
             private Handler dismissDialogHandler = new Handler() {
                 @Override
                 public void handleMessage(Message msg) {// handler接收到消息后就会执行此方法
-                    int max = progressDialog.getMax();
-                    Log.d(TAG, "msg.what = " + msg.what);
-                    Log.d(TAG, "progressDialog.max = " + max);
-                    if (msg.what + 1 >= max) {
+
+                    if (msg.what == Constants.ERR_CANNOT_CONNECT_SERVER) {
                         progressDialog.dismiss();// 关闭ProgressDialog
+                        AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+                        builder.setTitle("Error")
+                                .setMessage("Cannot connect to server.")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", null)
+                                .show();
                     } else {
-                        progressDialog.setMessage("Uploading documents (" + (msg.what + 1) + "/" + max + "), please wait...");
-                        progressDialog.setProgress(msg.what);
+
+                        int max = progressDialog.getMax();
+                        Log.d(TAG, "msg.what = " + msg.what);
+//                    Log.d(TAG, "progressDialog.max = " + max);
+                        if (msg.what + 1 >= max) {
+                            progressDialog.dismiss();// 关闭ProgressDialog
+                        } else {
+                            progressDialog.setMessage("Uploading documents (" + (msg.what + 1) + "/" + max + "), please wait...");
+                            progressDialog.setProgress(msg.what);
+                        }
                     }
                 }
             };
 
-            private void pushStat(Object obj, String type) {
+//            private Handler networkErrorHandler = new Handler() {
+//                @Override
+//                public void handleMessage(Message msg) {// handler接收到消息后就会执行此方法
+//
+//                    progressDialog.dismiss();// 关闭ProgressDialog
+//                    AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+//                    builder.setTitle("Error")
+//                            .setMessage("Cannot connect to server.")
+//                            .setCancelable(false)
+//                            .setPositiveButton("OK", null)
+//                            .show();
+//
+//                }
+//            };
 
-                AppSettings appSettings = AppSettings.getInstance();
+            private void pushStat(OkHttpClient httpClient, Object obj, String type) {
 
-                final String statUrl = appSettings.getAppPref().getString(AppSettings.SERVER_HOSTNAME, null) + "/stat";
+                final String statUrl = appSettings.getAppPref().getString(Constants.PREF_SERVER_HOSTNAME, null) + "/" + Constants.REQ_STAT_URL;
 
                 RequestBody requestBody = new FormBody.Builder()
                         .add("data", gson.toJson(obj))
@@ -155,15 +187,17 @@ public class AddFragment extends Fragment {
                         .post(requestBody)
                         .build();
 
-                new OkHttpClient().newCall(request).enqueue(new Callback() {
+                httpClient.newCall(request).enqueue(new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
+                        Log.e(TAG, "error when pushing statistics to server");
                     }
 
                     @Override
                     public void onResponse(Call call, okhttp3.Response response) throws IOException {
                         if (!response.isSuccessful()) {
                             // Handle the error
+                            Log.e(TAG, "response.isSuccessful() = false");
                         }
 
                         response.close();
@@ -186,7 +220,7 @@ public class AddFragment extends Fragment {
                                 }
 
                                 // Otherwise, we can write our data to the new contents.
-                                Log.i(TAG, "New contents created.");
+//                                Log.i(TAG, "New contents created.");
                                 // Get an output stream for the contents.
                                 OutputStream outputStream = result.getDriveContents().getOutputStream();
                                 // Write file data from it.
@@ -196,7 +230,7 @@ public class AddFragment extends Fragment {
 
                                     suiseClient.Enc(inputStream, outputStream);
 
-                                } catch (IOException e1) {
+                                } catch (Exception e1) {
                                     Log.i(TAG, "Unable to write file contents.");
                                 }
 
@@ -230,6 +264,20 @@ public class AddFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
+
+                if (!NetworkUtil.isNetworkConnected(ctx)) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+                    builder.setTitle("Error")
+                            .setMessage("No network connection.")
+                            .setCancelable(false)
+                            .setPositiveButton("OK", null)
+                            .show();
+                    return;
+                }
+
+                final String hostname = appSettings.getAppPref().getString(Constants.PREF_SERVER_HOSTNAME, null);
+                final String datadir = appSettings.getAppPref().getString(Constants.PREF_CLIENT_DATA_DIR, null);
+
                 progressDialog = new ProgressDialog(ctx, ProgressDialog.STYLE_SPINNER);
                 progressDialog.setTitle("Uploading...");
                 progressDialog.setMessage("Uploading documents, please wait...");
@@ -240,16 +288,16 @@ public class AddFragment extends Fragment {
 
                 final OkHttpClient httpClient = new OkHttpClient();
 
-                final AppSettings appSettings = AppSettings.getInstance();
                 final SuiseClient client = appSettings.getSuiseClient();
 
                 final String extStore = Environment.getExternalStorageDirectory().toString();
 
-                final String url = appSettings.getAppPref().getString(AppSettings.SERVER_HOSTNAME, null) + "/upload";
+                final String url = hostname + "/" + Constants.REQ_UPLOAD_URL;
+                final String pingUrl = hostname + "/" + Constants.REQ_PING_URL;
 
-                final boolean enableStatRpt = appSettings.getAppPref().getBoolean(AppSettings.SERVER_RPT_STAT, false);
+                final boolean enableStatRpt = appSettings.getAppPref().getBoolean(Constants.PREF_SERVER_RPT_STAT, false);
 
-                String dirPath = extStore + "/Suise";
+                String dirPath = extStore + File.separator + datadir;
                 File dir = new File(dirPath);
                 final File[] docList = dir.listFiles();
 
@@ -262,6 +310,23 @@ public class AddFragment extends Fragment {
                         new Runnable() {
                             @Override
                             public void run() {
+
+                                boolean pingOk = true;
+
+                                //add service check to server application before doing anything
+                                try {
+                                    Request pingRequest = new Request.Builder().url(pingUrl).build();
+                                    httpClient.newCall(pingRequest).execute();
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                    pingOk = false;
+                                }
+
+                                if (!pingOk) {
+                                    dismissDialogHandler.sendEmptyMessage(Constants.ERR_CANNOT_CONNECT_SERVER);
+                                    return;
+                                }
+                                //end of service check
 
                                 try {
 
@@ -279,7 +344,7 @@ public class AddFragment extends Fragment {
                                             adStopWatch.start();
 
                                             // the token file
-                                            AddTokenResult addTokenResult = client.AddToken(srcFile, false);//client.AddTokenSuffixes(srcFile);
+                                            AddTokenResult addTokenResult = client.AddToken(srcFile, false);
 
                                             adStopWatch.stop();
                                             adStopWatch.setName(addTokenResult.getId());
@@ -288,15 +353,15 @@ public class AddFragment extends Fragment {
                                             docId = addTokenResult.getId();
 
                                             if (enableStatRpt) {
-                                                pushStat(adStopWatch, "add-token-suffix");
+                                                pushStat(httpClient, adStopWatch, Constants.SW_TYPE_ADD_TOKEN);
                                             }
 
-                                            Log.d(TAG, "adStopWatch = " + adStopWatch.toString());
+//                                            Log.d(TAG, "adStopWatch = " + adStopWatch.toString());
 
                                             String token = gson.toJson(addTokenResult);
 
-                                            Log.d(TAG, "token = " + token);
-                                            Log.d(TAG, "docId = " + docId);
+//                                            Log.d(TAG, "token = " + token);
+//                                            Log.d(TAG, "docId = " + docId);
 
                                             formBodyBuilder = formBodyBuilder.add("token", token);
                                             formBodyBuilder = formBodyBuilder.add("docId", docId);
@@ -309,7 +374,7 @@ public class AddFragment extends Fragment {
                                             encStopWatch.stop();
 
                                             if (enableStatRpt) {
-                                                pushStat(encStopWatch, "encrypt");
+                                                pushStat(httpClient, encStopWatch, Constants.SW_TYPE_ENCRYPT);
                                             }
 
                                         } catch (Exception e) {
@@ -343,7 +408,7 @@ public class AddFragment extends Fragment {
                                                 uploadStopWatch.stop();
 
                                                 if (enableStatRpt) {
-                                                    pushStat(uploadStopWatch, "encrypt");
+                                                    pushStat(httpClient, uploadStopWatch, "encrypt");
                                                 }
 
                                                 response.close();
