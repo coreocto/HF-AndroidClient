@@ -71,13 +71,18 @@ public class AddFragment extends Fragment {
 
                     Log.d(TAG, "Created a file with content: " + driveId);
                     Log.d(TAG, "Resource Id: " + driveId.getResourceId());
+
+                    DriveFile driveFile = Drive.DriveApi.getFile(mGoogleApiClient, driveId);
+                    driveFile.addChangeSubscription(mGoogleApiClient);
                 }
             };
-    private OnFragmentInteractionListener mListener;
-    private ListView lvUploadFileList;
-    private Button bAdd;
+
+    private OnFragmentInteractionListener mListener = null;
+    private ListView lvUploadFileList = null;
+    private Button bAdd = null;
     private ArrayAdapter<String> arrayAdapter = null;
     private List<String> uploadFileList = null;
+    private GoogleApiClient mGoogleApiClient = null;
 
     public AddFragment() {
         // Required empty public constructor
@@ -111,6 +116,8 @@ public class AddFragment extends Fragment {
         final Context ctx = getActivity();
 
         final AppSettings appSettings = AppSettings.getInstance();
+
+        mGoogleApiClient = ((NavDwrActivity) ctx).getGoogleApiClient();
 
         this.uploadFileList = new ArrayList<>();
 
@@ -206,7 +213,6 @@ public class AddFragment extends Fragment {
             }
 
             private void saveEncFileToDrive(final java.io.File srcFile, final String docId, final SuiseClient suiseClient) {
-                final GoogleApiClient mGoogleApiClient = ((NavDwrActivity) ctx).getGoogleApiClient();
 
                 Drive.DriveApi.newDriveContents(mGoogleApiClient)
                         .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
@@ -255,7 +261,8 @@ public class AddFragment extends Fragment {
 
                                 // Create a file in the root folder
                                 Drive.DriveApi.getRootFolder(mGoogleApiClient)
-                                        .createFile(mGoogleApiClient, changeSet, result.getDriveContents())
+                                        .createFile(mGoogleApiClient, changeSet, result.getDriveContents(),
+                                                new ExecutionOptions.Builder().setNotifyOnCompletion(true).build())
                                         .setResultCallback(fileCallback);
                             }
                         });

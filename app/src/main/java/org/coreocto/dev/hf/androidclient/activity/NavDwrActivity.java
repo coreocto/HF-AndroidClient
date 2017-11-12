@@ -35,6 +35,7 @@ import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.fragment.AddFragment;
 import org.coreocto.dev.hf.androidclient.fragment.SearchFragment;
 import org.coreocto.dev.hf.androidclient.fragment.SettingsFragment;
+import org.coreocto.dev.hf.androidclient.fragment.TestFragment;
 import org.coreocto.dev.hf.androidclient.util.AndroidAes128CbcImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.AndroidMd5Impl;
@@ -48,7 +49,8 @@ public class NavDwrActivity extends AppCompatActivity
         AddFragment.OnFragmentInteractionListener,
         SearchFragment.OnFragmentInteractionListener,
         GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.OnConnectionFailedListener,
+        TestFragment.OnFragmentInteractionListener {
 
     private static final String TAG = "NavDwrActivity";
     private static final int RC_SIGN_IN = 9001;
@@ -271,9 +273,10 @@ public class NavDwrActivity extends AppCompatActivity
         }
 //        else if (id == R.id.nav_log) {
 //            fragmentClass = LogFragment.class;
-//        } else if (id == R.id.nav_test) {
-//            fragmentClass = TestFragment.class;
 //        }
+        else if (id == R.id.nav_test) {
+            fragmentClass = TestFragment.class;
+        }
 
         try {
             fragment = (Fragment) fragmentClass.newInstance();
