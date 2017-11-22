@@ -1,8 +1,8 @@
 package org.coreocto.dev.hf.androidclient.util;
 
-import org.coreocto.dev.hf.commonlib.util.IAes128Cbc;
+import org.coreocto.dev.hf.commonlib.crypto.IBlockCipherCbc;
 
-public class NativeAes128CbcImpl implements IAes128Cbc {
+public class NativeAes128CbcImpl implements IBlockCipherCbc {
 
     static {
         System.loadLibrary("native-lib");

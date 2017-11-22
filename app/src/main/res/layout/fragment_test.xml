@@ -5,9 +5,18 @@
              tools:context="org.coreocto.dev.hf.androidclient.fragment.TestFragment">
 
     <!-- TODO: Update blank fragment layout -->
-    <Button
-            android:text="Upload file to GDrive"
+    <LinearLayout
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:id="@+id/bTestAdd"/>
+            android:layout_height="match_parent">
+        <Button
+                android:text="Test Hugo Plugin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/bTestHugo" android:layout_weight="1"/>
+        <Button
+                android:text="Upload file to GDrive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/bTestAdd" android:layout_weight="1"/>
+    </LinearLayout>
 
 </FrameLayout>

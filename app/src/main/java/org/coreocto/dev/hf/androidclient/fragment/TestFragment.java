@@ -14,6 +14,7 @@ import android.widget.Button;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.drive.*;
+import hugo.weaving.DebugLog;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
@@ -82,6 +83,7 @@ public class TestFragment extends Fragment {
     }
 
     private Button bTestAdd;
+    private Button bTestHugo;
     private GoogleApiClient mGoogleApiClient;
 
     @Override
@@ -97,6 +99,28 @@ public class TestFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 saveFileToGDrive(new java.io.File(Environment.getExternalStorageDirectory() + File.separator + "Download" + File.separator + "ThinkCentre M910z AIO.pdf"));
+            }
+        });
+        this.bTestHugo = view.findViewById(R.id.bTestHugo);
+        this.bTestHugo.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                try {
+                    new Thread(new Runnable() {
+                        @DebugLog
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(5000);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
 

@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.jakewharton.hugo:hugo-plugin:1.2.1'
+    }
+}
+
+apply plugin: 'com.jakewharton.hugo'
+
 android {
     signingConfigs {
         config {
@@ -52,8 +64,9 @@ dependencies {
     //compile 'com.android.volley:volley:1.0.0'
     //compile 'org.apache.httpcomponents:httpmime:4.5.3'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'com.android.support:appcompat-v7:26.+'
+    compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.android.support:appcompat-v7:26.+'
     compile 'com.android.support:design:26.+'
     compile 'com.android.support:support-v4:26.+'
     compile 'com.google.code.gson:gson:2.8.1'
@@ -61,7 +74,8 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
     compile 'com.google.android.gms:play-services-auth:11.4.0'
     compile 'com.google.android.gms:play-services-drive:11.4.0'
-    compile 'com.github.coreocto:HF-ClientLib:e8102a1d3f'
+    compile 'com.github.coreocto:HF-ClientLib:01c90a6c0b'
+    compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
     testCompile 'junit:junit:4.12'
 }
 

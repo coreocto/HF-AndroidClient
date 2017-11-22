@@ -6,7 +6,7 @@ import android.support.test.runner.AndroidJUnit4;
 import android.util.Base64;
 import android.util.Log;
 import org.apache.commons.lang.RandomStringUtils;
-import org.coreocto.dev.hf.commonlib.crypto.IBlockCipherCbc;
+import org.coreocto.dev.hf.commonlib.crypto.IHashFunc;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -14,16 +14,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
-public class NativeAes128CbcImplTest {
+public class DroidMd5ImplTest {
 
-    private static final String TAG = "NativeAes128CbcImplTest";
+    private static final String TAG = "DroidMd5ImplTest";
 
     @Test
     public void useAppContext() throws Exception {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        IBlockCipherCbc aes128Cbc = new NativeAes128CbcImpl();
+        IHashFunc md5 = new AndroidMd5Impl();
 
         List<String> randomStrList = new ArrayList<>();
 
@@ -31,14 +31,10 @@ public class NativeAes128CbcImplTest {
             randomStrList.add(RandomStringUtils.random(20));
         }
 
-        byte[] key = new byte[16];
-        byte[] iv = new byte[16];
-
         long startTime = System.currentTimeMillis();
         for (String randomStr : randomStrList) {
-            byte[] data = randomStr.getBytes();
-            byte[] encData = aes128Cbc.encrypt(iv, key, data);
-            Log.i(TAG, Base64.encodeToString(encData, Base64.NO_WRAP));
+            byte[] data = md5.getHash(randomStr.getBytes());
+            Log.i(TAG, Base64.encodeToString(data, Base64.NO_WRAP));
         }
         long endTime = System.currentTimeMillis();
         Log.d(TAG, "elapsed time = " + (endTime - startTime) + "ms");

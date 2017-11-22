@@ -17,4 +17,10 @@ public class Constants {
     public static final String SW_TYPE_ENCRYPT = "encrypt";
 
     public static final int ERR_CANNOT_CONNECT_SERVER = -100;
+
+    //preference item for crypto test
+    public static final String PREF_CT_DEFAULT_RUN_CNT = "1";
+    public static final String PREF_CT_DEFAULT_DATA_SIZE = "1024";
+
+    public static final int FRAGMENT_CHART_RESULT = -500;
 }

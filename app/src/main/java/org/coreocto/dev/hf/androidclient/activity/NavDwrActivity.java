@@ -1,5 +1,6 @@
 package org.coreocto.dev.hf.androidclient.activity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
@@ -15,6 +16,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -32,10 +34,16 @@ import com.google.gson.Gson;
 import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
+import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkParam;
+import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkTask;
 import org.coreocto.dev.hf.androidclient.fragment.AddFragment;
 import org.coreocto.dev.hf.androidclient.fragment.SearchFragment;
 import org.coreocto.dev.hf.androidclient.fragment.SettingsFragment;
 import org.coreocto.dev.hf.androidclient.fragment.TestFragment;
+import org.coreocto.dev.hf.androidclient.fragment.cryptotest.ChartResultFragment;
+import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItem;
+import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemFragment;
+import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemRecyclerViewAdapter;
 import org.coreocto.dev.hf.androidclient.util.AndroidAes128CbcImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.AndroidMd5Impl;
@@ -44,13 +52,17 @@ import org.coreocto.dev.hf.commonlib.suise.util.SuiseUtil;
 import org.coreocto.dev.hf.commonlib.util.ILogger;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
+import java.util.List;
+
 public class NavDwrActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         AddFragment.OnFragmentInteractionListener,
         SearchFragment.OnFragmentInteractionListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        TestFragment.OnFragmentInteractionListener {
+        TestFragment.OnFragmentInteractionListener,
+        CryptoTestItemFragment.OnListFragmentInteractionListener,
+        ChartResultFragment.OnFragmentInteractionListener {
 
     private static final String TAG = "NavDwrActivity";
     private static final int RC_SIGN_IN = 9001;
@@ -156,6 +168,59 @@ public class NavDwrActivity extends AppCompatActivity
         }
     }
 
+    private FloatingActionButton fab = null;
+
+    public Fragment getCurrentFragment() {
+        return getSupportFragmentManager().findFragmentById(R.id.content_view);
+    }
+
+    public Fragment goToFragment(int id, boolean addToBackStack) {
+
+        // Create a new fragment and specify the fragment to show based on nav item clicked
+        Fragment fragment = null;
+        Class fragmentClass = null;
+
+        if (fab.getVisibility() != View.INVISIBLE) {
+            fab.setVisibility(View.INVISIBLE);
+        }
+
+        if (id == R.id.nav_settings) {
+            fragmentClass = SettingsFragment.class;
+        } else if (id == R.id.nav_search) {
+            fragmentClass = SearchFragment.class;
+        } else if (id == R.id.nav_add) {
+            fragmentClass = AddFragment.class;
+        }
+//        else if (id == R.id.nav_log) {
+//            fragmentClass = LogFragment.class;
+//        }
+        else if (id == R.id.nav_test) {
+            fragmentClass = TestFragment.class;
+        } else if (id == R.id.nav_crypto_test) {
+            fragmentClass = CryptoTestItemFragment.class;
+            fab.setVisibility(View.VISIBLE);
+        } else if (id == Constants.FRAGMENT_CHART_RESULT) {
+            fragmentClass = ChartResultFragment.class;
+        }
+
+        try {
+            fragment = (Fragment) fragmentClass.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (fragment == null) {
+            Log.e("error", "fragment is null, please check");
+        }
+
+        // Insert the fragment by replacing any existing fragment
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.content_view, fragment).commit();
+
+
+        return fragment;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -163,15 +228,56 @@ public class NavDwrActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setVisibility(View.INVISIBLE);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Fragment currentFragment = getCurrentFragment();
+                if (currentFragment instanceof CryptoTestItemFragment) {
+                    CryptoTestItemRecyclerViewAdapter adapter = (CryptoTestItemRecyclerViewAdapter) ((CryptoTestItemFragment) currentFragment).getRecyclerView().getAdapter();
+                    if (adapter.getCheckedCount() == 0) {
+                        new AlertDialog.Builder(NavDwrActivity.this).setMessage("Please select at least one scheme!!")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.dismiss();
+                                    }
+                                }).create().show();
+
+                    } else {
+
+                        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(NavDwrActivity.this);
+                        String sRunCnt = settings.getString("num_of_exec", Constants.PREF_CT_DEFAULT_RUN_CNT);
+                        String sDataSize = settings.getString("data_size", Constants.PREF_CT_DEFAULT_DATA_SIZE);
+                        Boolean bAllocMem = settings.getBoolean("alloc_mem", false);
+                        Boolean bExplicitGc = settings.getBoolean("explicit_gc", false);
+
+                        int runCnt = -1;
+                        int dataSize = -1;
+
+                        try {
+                            runCnt = Integer.parseInt(sRunCnt);
+                        } catch (NumberFormatException nfe) {
+                            Log.d(TAG, nfe.getMessage());
+                        }
+
+                        try {
+                            dataSize = Integer.parseInt(sDataSize);
+                        } catch (NumberFormatException nfe) {
+                            Log.d(TAG, nfe.getMessage());
+                        }
+
+                        BenchmarkParam param = new BenchmarkParam(dataSize, runCnt/*, bAllocMem, bExplicitGc*/);
+                        List<CryptoTestItem> itemList = adapter.getCheckedItems();
+                        for (CryptoTestItem item : itemList) {
+                            param.addTest(item.getSchemeName());
+                        }
+                        new BenchmarkTask(NavDwrActivity.this).execute(param);
+                    }
+                }
+            }
+        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -204,8 +310,8 @@ public class NavDwrActivity extends AppCompatActivity
 
         Registry registry = new Registry();
         registry.setBase64(new AndroidBase64Impl());
-        registry.setMd5(new AndroidMd5Impl());
-        registry.setAes128Cbc(new AndroidAes128CbcImpl());
+        registry.setHashFunc(new AndroidMd5Impl());
+        registry.setBlockCipherCbc(new AndroidAes128CbcImpl());
         registry.setLogger(suiseLogger);
 
         byte[] key1Bytes = registry.getBase64().decodeToByteArray(key1);
@@ -260,44 +366,12 @@ public class NavDwrActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        // Create a new fragment and specify the fragment to show based on nav item clicked
-        Fragment fragment = null;
-        Class fragmentClass = null;
-
-        if (id == R.id.nav_settings) {
-            fragmentClass = SettingsFragment.class;
-        } else if (id == R.id.nav_search) {
-            fragmentClass = SearchFragment.class;
-        } else if (id == R.id.nav_add) {
-            fragmentClass = AddFragment.class;
-        }
-//        else if (id == R.id.nav_log) {
-//            fragmentClass = LogFragment.class;
-//        }
-        else if (id == R.id.nav_test) {
-            fragmentClass = TestFragment.class;
-        }
-
-        try {
-            fragment = (Fragment) fragmentClass.newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        if (fragment == null) {
-            Log.e("error", "fragment is null, please check");
-        }
-
-        // Insert the fragment by replacing any existing fragment
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.content_view, fragment).commit();
+        this.goToFragment(id, false);
 
         // Highlight the selected item has been done by NavigationView
         item.setChecked(true);
         // Set action bar title
         setTitle(item.getTitle());
-        // Close the navigation drawer
-        //mDrawer.closeDrawers();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -306,6 +380,11 @@ public class NavDwrActivity extends AppCompatActivity
 
     @Override
     public void onFragmentInteraction(Uri uri) {
+
+    }
+
+    @Override
+    public void onListFragmentInteraction(CryptoTestItem item) {
 
     }
 }

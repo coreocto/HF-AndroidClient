@@ -9,22 +9,12 @@ import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
+import org.coreocto.dev.hf.commonlib.crypto.BlockCipherFactory;
 import org.coreocto.dev.hf.commonlib.util.IBase64;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
-
-import static org.coreocto.dev.hf.androidclient.util.AndroidAes128CbcImpl.CIPHER;
-import static org.coreocto.dev.hf.commonlib.util.IAes128Cbc.CIPHER_TRANSFORMATION;
 
 public class SearchResultAdapter extends ArrayAdapter<String> {
 
@@ -68,26 +58,16 @@ public class SearchResultAdapter extends ArrayAdapter<String> {
 
         byte[] decTxt = null;
 
-        SecretKeySpec secretKeySpec = new SecretKeySpec(key1, CIPHER);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(new byte[16]);
         try {
-            Cipher encCipher = Cipher.getInstance(CIPHER_TRANSFORMATION);
-            encCipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivParameterSpec);
-            decTxt = encCipher.doFinal(itemBytes);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
+            Cipher decCipher = BlockCipherFactory.getCipher(BlockCipherFactory.CIPHER_AES,
+                    BlockCipherFactory.CIPHER_AES + BlockCipherFactory.SEP + BlockCipherFactory.MODE_CBC + BlockCipherFactory.SEP + BlockCipherFactory.PADDING_PKCS5,
+                    Cipher.DECRYPT_MODE,
+                    key1,
+                    new byte[16]);
+            decTxt = decCipher.doFinal(itemBytes);
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
 
         txt1.setText(new String(decTxt));
 

@@ -7,12 +7,15 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 
-public class AndroidAes128CbcImpl implements IBlockCipherCbc {
+public class AndroidAes128CtrImpl implements IBlockCipherCbc {
 
     private Cipher encCipher = null;
     private Cipher decCipher = null;
 
-    @Override
+    private static final byte[] DEFAULT_IV = new byte[16];
+    public static final String CIPHER_TRANSFORMATION = "AES/CTR/PKCS5Padding";
+    public static final String CIPHER = "AES";
+
     public byte[] encrypt(byte[] iv, byte[] key, byte[] data) {
 
         if (iv == null || key == null || data == null) {
@@ -44,7 +47,7 @@ public class AndroidAes128CbcImpl implements IBlockCipherCbc {
         return result;
     }
 
-    @Override
+
     public byte[] decrypt(byte[] iv, byte[] key, byte[] data) {
         if (iv == null || key == null || data == null) {
             return null;
