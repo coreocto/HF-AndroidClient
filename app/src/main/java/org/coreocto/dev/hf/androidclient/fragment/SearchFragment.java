@@ -3,31 +3,39 @@ package org.coreocto.dev.hf.androidclient.fragment;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.webkit.MimeTypeMap;
+import android.widget.*;
+import com.google.android.gms.drive.*;
+import com.google.android.gms.drive.events.OpenFileCallback;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
 import okhttp3.*;
 import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
+import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.bean.SearchResponse;
 import org.coreocto.dev.hf.androidclient.view.SearchResultAdapter;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +90,9 @@ public class SearchFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        final Activity ctx = getActivity();
+        final NavDwrActivity ctx = (NavDwrActivity) getActivity();
+
+        final AppSettings appSettings = AppSettings.getInstance();
 
         View view = inflater.inflate(R.layout.fragment_search, container, false);
         this.etKeyword = (EditText) view.findViewById(R.id.etKeyword);
@@ -93,9 +103,160 @@ public class SearchFragment extends Fragment {
 
         this.arrayAdapter = new SearchResultAdapter(ctx, android.R.layout.simple_list_item_1, fileList);
 
-        lvFileList.setAdapter(arrayAdapter);
+        final SuiseClient client = appSettings.getSuiseClient();
 
-        final AppSettings appSettings = AppSettings.getInstance();
+        lvFileList.setAdapter(arrayAdapter);
+        lvFileList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                final String docId = arrayAdapter.getItem(position);
+
+                Log.d(TAG, "docId: "+docId);
+
+                SQLiteDatabase database = appSettings.getDatabaseHelper().getReadableDatabase();
+                Cursor c = database.rawQuery("select cremoteid from "+Constants.TABLE_REMOTE_DOCS+" where cremotename=?", new String[]{docId});
+
+                boolean recExists = false;
+                String remoteId = null;
+
+                while (c.moveToNext()){
+                    remoteId = c.getString(c.getColumnIndex("cremoteid"));
+                }
+
+                c.close();
+
+                Log.d(TAG, "remoteId: "+remoteId);
+
+                DriveId driveId = DriveId.decodeFromString(remoteId);
+
+                DriveFile driveFile = driveId.asDriveFile();
+
+                final DriveResourceClient driveResourceClient = ctx.getDriveResourceClient();
+
+                Task<DriveContents> openFileTask =
+                        driveResourceClient.openFile(driveFile, DriveFile.MODE_READ_ONLY);
+
+                openFileTask
+                        .continueWithTask(new Continuation<DriveContents, Task<Void>>() {
+                            @Override
+                            public Task<Void> then(@NonNull Task<DriveContents> task) throws Exception {
+                                DriveContents contents = task.getResult();
+
+                                File extStor = Environment.getExternalStorageDirectory();
+                                File dataDir = new File(extStor, Constants.LOCAL_APP_FOLDER);
+                                if (!dataDir.exists()){
+                                    dataDir.mkdir();
+                                }
+
+                                // Process contents...
+                                // copy file content to temp file
+                                File tempFile = File.createTempFile("hfac-", Constants.FILE_EXT_ENCRYPTED, dataDir);
+
+                                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(tempFile));
+                                BufferedInputStream bis = new BufferedInputStream(contents.getInputStream());
+                                int data = -1;
+                                while ((data = bis.read()) != -1) {
+                                    bos.write(data);
+                                }
+                                if (bis != null) {
+                                    bis.close();
+                                }
+                                if (bos != null) {
+                                    bos.close();
+                                }
+                                // end copy file content to temp file
+
+                                // decrypt the file
+                                File decFile = new File(dataDir, docId+Constants.FILE_EXT_DECRYPTED);
+
+                                client.Dec(tempFile, decFile);
+                                // end decrypt the file
+
+                                // display the file to user
+                                Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+                                viewIntent.setDataAndType(Uri.fromFile(decFile), "text/plain");
+                                try {
+                                    startActivity(viewIntent);
+                                }catch (Exception ex){
+                                    Log.e(TAG, "unable to open file: "+tempFile.getAbsolutePath());
+                                }
+                                // end display the file to user
+
+                                Task<Void> discardTask = driveResourceClient.discardContents(contents);
+                                return discardTask;
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                // Handle failure
+                                Log.e(TAG, "failed to get document from google drive",e);
+                            }
+                        });
+
+
+
+//                if (recExists){
+//                    DriveId driveId = new DriveId();
+//                }
+
+            }
+
+//            private void retrieveContents(DriveFile file) {
+//                // [START read_with_progress_listener]
+//                OpenFileCallback openCallback = new OpenFileCallback() {
+//                    @Override
+//                    public void onProgress(long bytesDownloaded, long bytesExpected) {
+//                        // Update progress dialog with the latest progress.
+//                        int progress = (int) (bytesDownloaded * 100 / bytesExpected);
+//                        Log.d(TAG, String.format("Loading progress: %d percent", progress));
+//                        mProgressBar.setProgress(progress);
+//                    }
+//
+//                    @Override
+//                    public void onContents(@NonNull DriveContents driveContents) {
+//                        // onProgress may not be called for files that are already
+//                        // available on the device. Mark the progress as complete
+//                        // when contents available to ensure status is updated.
+//                        mProgressBar.setProgress(100);
+//                        // Read contents
+//                        // [START_EXCLUDE]
+//                        try {
+//                            try (BufferedReader reader = new BufferedReader(
+//                                    new InputStreamReader(driveContents.getInputStream()))) {
+//                                StringBuilder builder = new StringBuilder();
+//                                String line;
+//                                while ((line = reader.readLine()) != null) {
+//                                    builder.append(line);
+//                                }
+//                                showMessage(getString(R.string.content_loaded));
+//                                mFileContents.setText(builder.toString());
+//                                getDriveResourceClient().discardContents(driveContents);
+//                            }
+//                        } catch (IOException e) {
+//                            onError(e);
+//                        }
+//                        // [END_EXCLUDE]
+//                    }
+//
+//                    @Override
+//                    public void onError(@NonNull Exception e) {
+//                        // Handle error
+//                        // [START_EXCLUDE]
+//                        Log.e(TAG, "Unable to read contents", e);
+//                        showMessage(getString(R.string.read_failed));
+//                        finish();
+//                        // [END_EXCLUDE]
+//                    }
+//                };
+//
+//                getDriveResourceClient().openFile(file, DriveFile.MODE_READ_ONLY, openCallback);
+//                // [END read_with_progress_listener]
+//            }
+
+        });
+
+
 
         final Gson gson = appSettings.getGson();
 
@@ -106,28 +267,28 @@ public class SearchFragment extends Fragment {
 
         final OkHttpClient httpClient = builder.build();
 
-        final SuiseClient client = appSettings.getSuiseClient();
+
 
         final FragmentActivity activity = getActivity();
 
         final Handler mHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {// handler接收到消息后就会执行此方法
-                if (msg.what == 0) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                    builder.setTitle("Search result")
-                            .setMessage("No documents were found.")
-                            .setCancelable(false)
-                            .setPositiveButton("OK", null)
-                            .show();
-                } else {
+//                if (msg.what == 0) {
+//                    AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+//                    builder.setTitle("Search result")
+//                            .setMessage("No documents were found.")
+//                            .setCancelable(false)
+//                            .setPositiveButton("OK", null)
+//                            .show();
+//                } else {
                     AlertDialog.Builder builder = new AlertDialog.Builder(activity);
                     builder.setTitle("Search result")
                             .setMessage(msg.what + " documents were found.")
                             .setCancelable(false)
                             .setPositiveButton("OK", null)
                             .show();
-                }
+//                }
                 arrayAdapter.notifyDataSetChanged();
             }
         };

@@ -2,6 +2,8 @@ package org.coreocto.dev.hf.androidclient.bean;
 
 import android.content.SharedPreferences;
 import com.google.gson.Gson;
+import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
+import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
@@ -13,6 +15,17 @@ public class AppSettings {
     private Gson gson;
     private String idToken;
     private Registry registry;
+    private NavDwrActivity mainActivity;
+
+    public DatabaseHelper getDatabaseHelper() {
+        return databaseHelper;
+    }
+
+    public void setDatabaseHelper(DatabaseHelper databaseHelper) {
+        this.databaseHelper = databaseHelper;
+    }
+
+    private DatabaseHelper databaseHelper;
 
     public static AppSettings getInstance() {
         if (instance == null) {
@@ -21,12 +34,20 @@ public class AppSettings {
         return instance;
     }
 
-    public void setRegistry(Registry registry) {
-        this.registry = registry;
+    public NavDwrActivity getMainActivity() {
+        return mainActivity;
+    }
+
+    public void setMainActivity(NavDwrActivity activity){
+        this.mainActivity = activity;
     }
 
     public Registry getRegistry() {
         return registry;
+    }
+
+    public void setRegistry(Registry registry) {
+        this.registry = registry;
     }
 
     public String getIdToken() {
@@ -41,10 +62,6 @@ public class AppSettings {
         return gson;
     }
 
-    public void setGson(Gson gson) {
-        this.gson = gson;
-    }
-
 //    public String getKey1() {
 //        return appPref.getString("client.key1", null);
 //    }
@@ -56,6 +73,10 @@ public class AppSettings {
 //    public String getHostname() {
 //        return appPref.getString("server.hostname", null);
 //    }
+
+    public void setGson(Gson gson) {
+        this.gson = gson;
+    }
 
     public SharedPreferences getAppPref() {
         return appPref;

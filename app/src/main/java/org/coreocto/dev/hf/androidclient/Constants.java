@@ -21,6 +21,19 @@ public class Constants {
     //preference item for crypto test
     public static final String PREF_CT_DEFAULT_RUN_CNT = "1";
     public static final String PREF_CT_DEFAULT_DATA_SIZE = "1024";
+    public static final String PREF_CT_NUM_OF_EXEC = "num_of_exec";
+    public static final String PREF_CT_DATA_SIZE = "data_size";
+    public static final String PREF_CT_ALLOC_MEM = "alloc_mem";
+    public static final String PREF_CT_EXPLICIT_GC = "explicit_gc";
 
     public static final int FRAGMENT_CHART_RESULT = -500;
+
+    public static final String LOCAL_APP_DB = "hfapp.db";
+    public static final String TABLE_REMOTE_DOCS = "tremote_docs";
+
+    public static final String LOCAL_APP_FOLDER = ".hfandroidclient";
+
+    public static final String FILE_EXT_ENCRYPTED = ".enc";
+    public static final String FILE_EXT_DECRYPTED = ".txt";
+
 }

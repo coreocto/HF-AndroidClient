@@ -3,10 +3,12 @@ package org.coreocto.dev.hf.androidclient.benchmark;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Debug;
 import android.util.Log;
 import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.ChartResultFragment;
+import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.commonlib.crypto.BlockCipherFactory;
 import org.coreocto.dev.hf.commonlib.crypto.HashFuncFactory;
 
@@ -45,7 +47,7 @@ public class BenchmarkTask extends AsyncTask<BenchmarkParam, BenchmarkResult, Li
 
     //@Profiling(showParamValues = true, timeType = MeasureType.DEBUG_THREADCPUTIMENANOS)
     private long getProcessTime(String type, byte[] data, int runCnt, int dataSize/*, boolean explicitGc*/) {
-        long tsLong = System.currentTimeMillis();
+        long tsLong = Debug.threadCpuTimeNanos();
 
         if (type != null && (type.startsWith(BlockCipherFactory.CIPHER_AES) || type.startsWith(BlockCipherFactory.CIPHER_DES) || type.startsWith(BlockCipherFactory.CIPHER_DESede))) {
 
@@ -53,6 +55,8 @@ public class BenchmarkTask extends AsyncTask<BenchmarkParam, BenchmarkResult, Li
 
             int keySize = -1;
             int ivSize = -1;
+
+            byte[] output = null;
 
             if (type.startsWith(BlockCipherFactory.CIPHER_AES)
 //                    || type.startsWith(BlockCipherFactory.CIPHER_DESede)
@@ -85,19 +89,27 @@ public class BenchmarkTask extends AsyncTask<BenchmarkParam, BenchmarkResult, Li
                     );
                 }
 
-                encCipher.doFinal(data);
+                output = encCipher.doFinal(data);
+
+                Log.d(TAG, new AndroidBase64Impl().encodeToString(output));
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
         } else {
+
+            byte[] output = null;
+
             MessageDigest digest = null;
             try {
                 digest = HashFuncFactory.getMessageDigest(type);
-                digest.digest(data);
+                output = digest.digest(data);
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            Log.d(TAG, new AndroidBase64Impl().encodeToString(output));
         }
 
 //        if (HashUtil.MD_SHA_1.equals(type)) {
@@ -187,7 +199,7 @@ public class BenchmarkTask extends AsyncTask<BenchmarkParam, BenchmarkResult, Li
 //                }
 //            }
 //        }
-        long ttLong = System.currentTimeMillis() - tsLong;
+        long ttLong = Debug.threadCpuTimeNanos() - tsLong;
 
 //        if (explicitGc) {
 //            MemoryUtil.freeMemory();
@@ -342,7 +354,9 @@ public class BenchmarkTask extends AsyncTask<BenchmarkParam, BenchmarkResult, Li
                 ttLong = getProcessTime(testId, data, param.getTestCnt(), param.getDataSize()/*, param.isExplicitGc()*/);
             }
 //            }
-            int roundNumber = (int) ttLong; //Math.round(ttLong / 1000000);
+            int roundNumber = Math.round(ttLong / 1000000);
+
+            Log.d(TAG, "roundNumber = "+roundNumber);
 
             results[idx] = new BenchmarkResult();
             results[idx].setTime(roundNumber);

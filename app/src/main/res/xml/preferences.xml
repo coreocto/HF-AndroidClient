@@ -13,6 +13,9 @@
         <Preference
                 android:key="prefClientGenKeysBtn"
                 android:title="@string/pref_client_genkeys"/>
+        <Preference
+                android:key="prefClientClrAppDbBtn"
+                android:title="@string/pref_client_clrappdb"/>
         <!--<Preference-->
         <!--android:title="Acts like a button"-->
         <!--android:summary="This is a cool button"-->
@@ -26,5 +29,28 @@
                 android:defaultValue="false"
                 android:key="server.reportStat"
                 android:title="@string/pref_server_report_stat"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_crypto_test">
+        <ListPreference
+                android:defaultValue="1"
+                android:entries="@array/opt_num_of_exec"
+                android:entryValues="@array/opt_num_of_exec_values"
+                android:key="num_of_exec"
+                android:title="No. of Execution" />
+        <ListPreference
+                android:defaultValue="1024"
+                android:entries="@array/opt_data_size"
+                android:entryValues="@array/opt_data_size_values"
+                android:key="data_size"
+                android:title="Data Size" />
+        <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="alloc_mem"
+                android:title="Allocate RAM before test(s)" />
+
+        <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="explicit_gc"
+                android:title="Explicit G.C. between test(s)" />
     </PreferenceCategory>
 </PreferenceScreen>

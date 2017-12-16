@@ -2,6 +2,7 @@ package org.coreocto.dev.hf.androidclient.service;
 
 import android.util.Log;
 import com.google.android.gms.drive.DriveId;
+import com.google.android.gms.drive.events.ChangeEvent;
 import com.google.android.gms.drive.events.CompletionEvent;
 import com.google.android.gms.drive.events.DriveEventService;
 
@@ -19,6 +20,11 @@ public class GDriveEventService extends DriveEventService {
     @Override
     public synchronized void onDestroy() {
         super.onDestroy();
+    }
+
+    @Override
+    public void onChange(ChangeEvent changeEvent) {
+        Log.d(TAG, "Received event: " + changeEvent);
     }
 
     @Override

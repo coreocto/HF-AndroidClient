@@ -41,36 +41,7 @@ public class SearchResultAdapter extends ArrayAdapter<String> {
 
         TextView txt1 = (TextView) convertView.findViewById(android.R.id.text1);
 
-        byte[] key1 = AppSettings.getInstance().getSuiseClient().getKey1();
-
-        byte[] itemBytes = new IBase64() {
-
-            @Override
-            public String encodeToString(byte[] bytes) {
-                return null;
-            }
-
-            @Override
-            public byte[] decodeToByteArray(String s) {
-                return Base64.decode(s, Base64.NO_WRAP);
-            }
-        }.decodeToByteArray(itemTxt);
-
-        byte[] decTxt = null;
-
-        try {
-            Cipher decCipher = BlockCipherFactory.getCipher(BlockCipherFactory.CIPHER_AES,
-                    BlockCipherFactory.CIPHER_AES + BlockCipherFactory.SEP + BlockCipherFactory.MODE_CBC + BlockCipherFactory.SEP + BlockCipherFactory.PADDING_PKCS5,
-                    Cipher.DECRYPT_MODE,
-                    key1,
-                    new byte[16]);
-            decTxt = decCipher.doFinal(itemBytes);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        txt1.setText(new String(decTxt));
-
+        txt1.setText(itemTxt);
 
         return convertView;
     }

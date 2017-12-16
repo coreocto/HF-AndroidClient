@@ -17,6 +17,10 @@
                 android:text="Upload file to GDrive"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/bTestAdd" android:layout_weight="1"/>
+        <Button
+                android:text="Open file"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/bTestOpen" android:layout_weight="1"/>
     </LinearLayout>
 
 </FrameLayout>

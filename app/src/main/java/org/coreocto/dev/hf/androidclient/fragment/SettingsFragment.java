@@ -2,14 +2,18 @@ package org.coreocto.dev.hf.androidclient.fragment;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
+import android.util.Log;
 import com.github.machinarius.preferencefragment.PreferenceFragment;
 import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
+import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
+import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
@@ -25,6 +29,7 @@ public class SettingsFragment extends PreferenceFragment {
     private EditTextPreference prefClientKey2 = null;
     private EditTextPreference prefServerHostname = null;
     private EditTextPreference prefClientDatadir = null;
+    private static final String TAG = "SettingsFragment";
 
     public SettingsFragment() {
 
@@ -118,6 +123,24 @@ public class SettingsFragment extends PreferenceFragment {
         updateSummary(prefClientKey1, Constants.PREF_EMPTY_VAL_PLACEHOLDER);
         updateSummary(prefClientKey2, Constants.PREF_EMPTY_VAL_PLACEHOLDER);
         updateSummary(prefServerHostname, Constants.PREF_EMPTY_VAL_PLACEHOLDER);
+
+        //added on 15/12/2017 for removing all records from app db
+        Preference prefClientClrAppDbBtn = findPreference("prefClientClrAppDbBtn");
+        prefClientClrAppDbBtn.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+
+                DatabaseHelper databaseHelper = AppSettings.getInstance().getDatabaseHelper();
+                SQLiteDatabase database = databaseHelper.getWritableDatabase();
+                long affectedRows = database.delete(Constants.TABLE_REMOTE_DOCS, null, null);
+
+                Log.d(TAG, "deletedRows: "+affectedRows);
+
+                //code for what you want it to do
+                return true;
+            }
+        });
+        //end
 
         Preference prefClientGenKeysBtn = findPreference("prefClientGenKeysBtn");
         prefClientGenKeysBtn.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {

@@ -1,6 +1,7 @@
 package org.coreocto.dev.hf.androidclient.fragment;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -10,11 +11,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.drive.*;
 import hugo.weaving.DebugLog;
+import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
@@ -54,8 +57,9 @@ public class TestFragment extends Fragment {
                     Log.d(TAG, "Created a file with content: " + driveId);
                     Log.d(TAG, "Resource Id: " + driveId.getResourceId());
 
-                    DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient, driveId);
-                    file.addChangeSubscription(mGoogleApiClient);
+                    //comment
+//                    DriveFile file = Drive.DriveApi.getFile(mGoogleApiClient, driveId);
+//                    file.addChangeSubscription(mGoogleApiClient);
                 }
             };
 
@@ -84,7 +88,8 @@ public class TestFragment extends Fragment {
 
     private Button bTestAdd;
     private Button bTestHugo;
-    private GoogleApiClient mGoogleApiClient;
+    private Button bTestOpen;
+//    private GoogleApiClient mGoogleApiClient;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -92,7 +97,7 @@ public class TestFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_test, container, false);
 
-        mGoogleApiClient = ((NavDwrActivity) this.getActivity()).getGoogleApiClient();
+//        mGoogleApiClient = ((NavDwrActivity) this.getActivity()).getGoogleApiClient();
 
         this.bTestAdd = view.findViewById(R.id.bTestAdd);
         this.bTestAdd.setOnClickListener(new View.OnClickListener() {
@@ -121,6 +126,29 @@ public class TestFragment extends Fragment {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+        });
+        this.bTestOpen = view.findViewById(R.id.bTestOpen);
+        this.bTestOpen.setOnClickListener(new View.OnClickListener() {
+            private static final int READ_REQUEST_CODE = 42;
+
+            /**
+             * Fires an intent to spin up the "file chooser" UI and select an image.
+             */
+            public void performFileSearch() {
+
+                Intent myIntent = new Intent(Intent.ACTION_VIEW);
+                String extStore = Environment.getExternalStorageDirectory().toString();
+                File dir = new File(extStore + File.separator + AppSettings.getInstance().getAppPref().getString(Constants.PREF_CLIENT_DATA_DIR, null));
+                File[] docList = dir.listFiles();
+                myIntent.setDataAndType(Uri.fromFile(docList[0]), "text/plain");
+//                myIntent.setData(Uri.fromFile(docList[0]));
+                startActivity(myIntent);
+            }
+
+            @Override
+            public void onClick(View v) {
+                performFileSearch();
             }
         });
 
@@ -168,58 +196,58 @@ public class TestFragment extends Fragment {
 
     private void saveFileToGDrive(final File srcFile) {
 
-        Drive.DriveApi.newDriveContents(mGoogleApiClient)
-                .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
-
-                    @Override
-                    public void onResult(@NonNull DriveApi.DriveContentsResult result) {
-                        // If the operation was not successful, we cannot do anything and must fail.
-                        if (!result.getStatus().isSuccess()) {
-                            Log.i(TAG, "Failed to create new contents.");
-                            return;
-                        }
-
-                        // Otherwise, we can write our data to the new contents.
-//                                Log.i(TAG, "New contents created.");
-                        // Get an output stream for the contents.
-                        OutputStream outputStream = result.getDriveContents().getOutputStream();
-                        // Write file data from it.
-                        FileInputStream inputStream = null;
-                        try {
-                            inputStream = new FileInputStream(srcFile);
-
-                            SuiseUtil suiseUtil = new SuiseUtil(AppSettings.getInstance().getRegistry());
-                            suiseUtil.copy(4096, inputStream, outputStream);
-
-                        } catch (Exception e1) {
-                            Log.i(TAG, "Unable to write file contents.");
-                        }
-
-                        if (inputStream != null) {
-                            try {
-                                inputStream.close();
-                            } catch (IOException e) {
-                            }
-                        }
-
-                        if (outputStream != null) {
-                            try {
-                                outputStream.close();
-                            } catch (IOException e) {
-                            }
-                        }
-
-                        // Create the initial metadata - MIME type and title.
-                        // Note that the user will be able to change the title later.
-                        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-                                .setMimeType("application/octet-stream").setTitle("test").build();
-
-                        // Create a file in the root folder
-                        Drive.DriveApi.getRootFolder(mGoogleApiClient)
-                                .createFile(mGoogleApiClient, changeSet, result.getDriveContents(), new ExecutionOptions.Builder().setNotifyOnCompletion(true)
-                                        .build())
-                                .setResultCallback(fileCallback);
-                    }
-                });
+//        Drive.DriveApi.newDriveContents(mGoogleApiClient)
+//                .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
+//
+//                    @Override
+//                    public void onResult(@NonNull DriveApi.DriveContentsResult result) {
+//                        // If the operation was not successful, we cannot do anything and must fail.
+//                        if (!result.getStatus().isSuccess()) {
+//                            Log.i(TAG, "Failed to create new contents.");
+//                            return;
+//                        }
+//
+//                        // Otherwise, we can write our data to the new contents.
+////                                Log.i(TAG, "New contents created.");
+//                        // Get an output stream for the contents.
+//                        OutputStream outputStream = result.getDriveContents().getOutputStream();
+//                        // Write file data from it.
+//                        FileInputStream inputStream = null;
+//                        try {
+//                            inputStream = new FileInputStream(srcFile);
+//
+//                            SuiseUtil suiseUtil = new SuiseUtil(AppSettings.getInstance().getRegistry());
+//                            suiseUtil.copy(4096, inputStream, outputStream);
+//
+//                        } catch (Exception e1) {
+//                            Log.i(TAG, "Unable to write file contents.");
+//                        }
+//
+//                        if (inputStream != null) {
+//                            try {
+//                                inputStream.close();
+//                            } catch (IOException e) {
+//                            }
+//                        }
+//
+//                        if (outputStream != null) {
+//                            try {
+//                                outputStream.close();
+//                            } catch (IOException e) {
+//                            }
+//                        }
+//
+//                        // Create the initial metadata - MIME type and title.
+//                        // Note that the user will be able to change the title later.
+//                        MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
+//                                .setMimeType("application/octet-stream").setTitle("test").build();
+//
+//                        // Create a file in the root folder
+//                        Drive.DriveApi.getRootFolder(mGoogleApiClient)
+//                                .createFile(mGoogleApiClient, changeSet, result.getDriveContents(), new ExecutionOptions.Builder().setNotifyOnCompletion(true)
+//                                        .build())
+//                                .setResultCallback(fileCallback);
+//                    }
+//                });
     }
 }
