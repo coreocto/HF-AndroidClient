@@ -34,10 +34,13 @@ import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.bean.SearchResponse;
 import org.coreocto.dev.hf.androidclient.view.SearchResultAdapter;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
+import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
+import org.coreocto.dev.hf.commonlib.vasst.bean.SearchResult;
 
 import java.io.*;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -104,6 +107,7 @@ public class SearchFragment extends Fragment {
         this.arrayAdapter = new SearchResultAdapter(ctx, android.R.layout.simple_list_item_1, fileList);
 
         final SuiseClient client = appSettings.getSuiseClient();
+        final VasstClient vasstClient = appSettings.getVasstClient();
 
         lvFileList.setAdapter(arrayAdapter);
         lvFileList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -150,19 +154,19 @@ public class SearchFragment extends Fragment {
 
                                 // Process contents...
                                 // copy file content to temp file
-                                File tempFile = File.createTempFile("hfac-", Constants.FILE_EXT_ENCRYPTED, dataDir);
+                                File tempFile = File.createTempFile("hfac", Constants.FILE_EXT_ENCRYPTED, dataDir);
 
-                                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(tempFile));
-                                BufferedInputStream bis = new BufferedInputStream(contents.getInputStream());
+                                BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile));
+                                BufferedInputStream is = new BufferedInputStream(contents.getInputStream());
                                 int data = -1;
-                                while ((data = bis.read()) != -1) {
-                                    bos.write(data);
+                                while ((data = is.read()) != -1) {
+                                    os.write(data);
                                 }
-                                if (bis != null) {
-                                    bis.close();
+                                if (is != null) {
+                                    is.close();
                                 }
-                                if (bos != null) {
-                                    bos.close();
+                                if (os != null) {
+                                    os.close();
                                 }
                                 // end copy file content to temp file
 
@@ -267,8 +271,6 @@ public class SearchFragment extends Fragment {
 
         final OkHttpClient httpClient = builder.build();
 
-
-
         final FragmentActivity activity = getActivity();
 
         final Handler mHandler = new Handler() {
@@ -297,23 +299,54 @@ public class SearchFragment extends Fragment {
             @Override
             public void onClick(View view) {
 
-                String token = client.SearchToken(etKeyword.getText().toString()).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
-
-                String query = null;
-
-                try {
-                    query = URLEncoder.encode(token, "utf-8");
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
-
-//                RequestQueue queue = Volley.newRequestQueue(ctx);
-
-                String queryId = "";//ClientUtil.ID();
+                final String sseType = appSettings.getAppPref().getString(Constants.PREF_CLIENT_SSE_TYPE, Constants.PREF_CLIENT_SSE_TYPE_SUISE);
 
                 FormBody.Builder formBodyBuilder = new FormBody.Builder();
-                formBodyBuilder = formBodyBuilder.add("q", query);
-                formBodyBuilder = formBodyBuilder.add("qid", queryId);
+                formBodyBuilder = formBodyBuilder.add("type", sseType);
+
+
+                String token = null;
+
+                if (sseType.equalsIgnoreCase(Constants.PREF_CLIENT_SSE_TYPE_SUISE)){
+                    token = client.SearchToken(etKeyword.getText().toString()).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
+
+                    formBodyBuilder = formBodyBuilder.add("q", token);
+
+                }else if (sseType.equalsIgnoreCase(Constants.PREF_CLIENT_SSE_TYPE_VASST)){
+                    String searchStr = etKeyword.getText().toString();
+
+                    // TODO: need to think of a method to ensure same x when performing search
+                    byte x = vasstClient.getSecretKey()[0];
+
+                    /*
+                    // we need to provide the "x" in order to get correct result
+                    SQLiteDatabase database = appSettings.getDatabaseHelper().getReadableDatabase();
+                    Cursor c = database.rawQuery("select cx from "+Constants.TABLE_REMOTE_DOCS+" where cremotename=?", new String[]{docId});
+
+                    boolean recExists = false;
+                    String remoteId = null;
+
+                    while (c.moveToNext()){
+                        remoteId = c.getString(c.getColumnIndex("cremoteid"));
+                    }
+
+                    c.close();
+
+                    Log.d(TAG, "remoteId: "+remoteId);
+
+                    byte x = 0;
+                    */
+
+                    List<String> encTokens = vasstClient.CreateReq(searchStr, x);
+
+                    for (int i = encTokens.size() - 1; i >= 0; i--) {
+                        String encToken = encTokens.get(i);
+                        formBodyBuilder = formBodyBuilder.add("q", encToken);
+                    }
+
+                }else{
+                    throw new UnsupportedOperationException();
+                }
 
                 RequestBody requestBody = formBodyBuilder.build();
 
@@ -343,11 +376,11 @@ public class SearchFragment extends Fragment {
                         } else {
                             Log.i(TAG, "http request ok");
 
-                            SearchResponse searchResponse = null;
-
                             String respStr = response.body().string();
 
                             Log.d(TAG, respStr);
+
+                            SearchResponse searchResponse = null;
 
                             try {
                                 searchResponse = gson.fromJson(respStr, SearchResponse.class);
@@ -379,48 +412,11 @@ public class SearchFragment extends Fragment {
 
                         response.close();
 
-//                                            appDb.insert(BenchmarkReaderContract.BenchmarkEntry.TABLE_NAME, null, uploadStopWatch.getContentValues());
+                        //appDb.insert(BenchmarkReaderContract.BenchmarkEntry.TABLE_NAME, null, uploadStopWatch.getContentValues());
                         // Upload successful
                     }
                 });
 
-                // Request a string response from the provided URL.
-//                StringRequest stringRequest = new StringRequest(Request.Method.GET, appSettings.getHostname() + "/search?q=" + query,
-//                        new Response.Listener<String>() {
-//                            @Override
-//                            public void onResponse(String response) {
-//
-//                                SearchResponse searchResponse = null;
-//
-//                                try {
-//                                    searchResponse = gson.fromJson(response, SearchResponse.class);
-//                                } catch (Exception ex) {
-//                                    Log.e("searchResponse", "error when parsing response into object", ex);
-//                                }
-//
-//                                fileList.clear();
-//
-//                                if (searchResponse != null) {
-//                                    Log.d("searchResponse", "status = " + searchResponse.getStatus());
-//                                    Log.d("searchResponse", "count = " + searchResponse.getCount());
-//                                    Log.d("searchResponse", "files = " + searchResponse.getFiles());
-//
-//                                    if (searchResponse.getFiles() != null && searchResponse.getFiles().size() > 0) {
-//                                        fileList.addAll(searchResponse.getFiles());
-//                                    }
-//                                }
-//
-//                                arrayAdapter.notifyDataSetChanged();
-//
-//                            }
-//                        }, new Response.ErrorListener() {
-//                    @Override
-//                    public void onErrorResponse(VolleyError error) {
-//                        Log.d("Volley", "That didn't work!");
-//                    }
-//                });
-//                // Add the request to the RequestQueue.
-//                queue.add(stringRequest);
             }
         });
 

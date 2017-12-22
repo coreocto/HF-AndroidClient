@@ -50,6 +50,7 @@ import org.coreocto.dev.hf.androidclient.util.AndroidAes128CbcImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.AndroidMd5Impl;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
+import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.suise.util.SuiseUtil;
 import org.coreocto.dev.hf.commonlib.util.ILogger;
 import org.coreocto.dev.hf.commonlib.util.Registry;
@@ -60,14 +61,11 @@ public class NavDwrActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         AddFragment.OnFragmentInteractionListener,
         SearchFragment.OnFragmentInteractionListener,
-//        GoogleApiClient.ConnectionCallbacks,
-//        GoogleApiClient.OnConnectionFailedListener,
         TestFragment.OnFragmentInteractionListener,
         CryptoTestItemFragment.OnListFragmentInteractionListener,
         ChartResultFragment.OnFragmentInteractionListener {
 
     private static final String TAG = "NavDwrActivity";
-//    private static final int RC_SIGN_IN = 9001;
     private static final int REQUEST_CODE_SIGN_IN = 0;
 
     public GoogleSignInClient getGoogleSignInClient() {
@@ -86,93 +84,19 @@ public class NavDwrActivity extends AppCompatActivity
     private DriveClient mDriveClient;
     private DriveResourceClient mDriveResourceClient;
 
-//    private static final int REQUEST_CODE_RESOLUTION = 3;
-//    private GoogleApiClient mGoogleApiClient;
-
-//    public GoogleApiClient getGoogleApiClient() {
-//        return mGoogleApiClient;
-//    }
-
-//    @Override
-//    public void onConnected(@Nullable Bundle bundle) {
-//        Log.d(TAG, "GoogleApiClient connected");
-//    }
-//
-//    @Override
-//    public void onConnectionSuspended(int i) {
-//        Log.d(TAG, "GoogleApiClient connection suspended");
-//    }
-//
-//    @Override
-//    public void onConnectionFailed(@NonNull ConnectionResult result) {
-//        // Called whenever the API client fails to connect.
-//        Log.i(TAG, "GoogleApiClient connection failed: " + result.toString());
-//        if (!result.hasResolution()) {
-//            // show the localized error dialog.
-//            GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
-//            return;
-//        }
-//        // The failure has a resolution. Resolve it.
-//        // Called typically when the app is not yet authorized, and an
-//        // authorization
-//        // dialog is displayed to the user.
-//        try {
-//            result.startResolutionForResult(this, REQUEST_CODE_RESOLUTION);
-//        } catch (IntentSender.SendIntentException e) {
-//            Log.e(TAG, "Exception while starting resolution activity", e);
-//        }
-//    }
-
     @Override
     protected void onResume() {
         super.onResume();
-//        if (mGoogleApiClient == null) {
-//            // Configure sign-in to request the user's ID, email address, and basic
-//            // profile. ID and basic profile are included in DEFAULT_SIGN_IN.
-////            String serverClientId = getString(R.string.server_client_id);
-////            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-////                    .requestScopes(new Scope(Scopes.DRIVE_APPFOLDER))
-////                    .requestScopes(new Scope(Scopes.DRIVE_FILE))
-////                    .requestServerAuthCode(serverClientId, false)
-////                    .requestIdToken(serverClientId)
-////                    .build();
-//
-//            // Create the API client and bind it to an instance variable.
-//            // We use this instance as the callback for connection and connection
-//            // failures.
-//            // Since no account name is passed, the user is prompted to choose.
-//            mGoogleApiClient = new GoogleApiClient.Builder(this)
-////                    .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
-////                    .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
-//                    .addApi(Drive.API)
-//                    .addScope(Drive.SCOPE_FILE)
-////                    .addScope(Drive.SCOPE_APPFOLDER)
-//                    .addConnectionCallbacks(this)
-//                    .addOnConnectionFailedListener(this)
-//                    .build();
-//        }
-//        // Connect the client. Once connected, the camera is launched.
-//        mGoogleApiClient.connect();
     }
 
     @Override
     protected void onPause() {
-//        if (mGoogleApiClient != null) {
-//            mGoogleApiClient.disconnect();
-//        }
         super.onPause();
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-//        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
-//        if (requestCode == RC_SIGN_IN) {
-//            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-//            handleSignInResult(result);
-//        }
-
         if (requestCode == REQUEST_CODE_SIGN_IN){
             Log.i(TAG, "Signed in successfully.");
             // Use the last signed in account here since it already have a Drive scope.
@@ -181,20 +105,6 @@ public class NavDwrActivity extends AppCompatActivity
             mDriveResourceClient = Drive.getDriveResourceClient(this, GoogleSignIn.getLastSignedInAccount(this));
         }
     }
-
-//    private void handleSignInResult(GoogleSignInResult result) {
-//        Log.d(TAG, "handleSignInResult:" + result.isSuccess());
-//        if (result.isSuccess()) {
-//            // Signed in successfully, show authenticated UI.
-//            GoogleSignInAccount acct = result.getSignInAccount();
-//            String idToken = acct.getIdToken();
-//            AppSettings.getInstance().setIdToken(idToken);
-//            Log.d(TAG, "signed in");
-//        } else {
-//            // Signed out, show unauthenticated UI.
-//            Log.d(TAG, "signed out");
-//        }
-//    }
 
     private FloatingActionButton fab = null;
 
@@ -326,9 +236,6 @@ public class NavDwrActivity extends AppCompatActivity
         appSettings.setAppPref(appPref);
         appSettings.setGson(new Gson());
 
-        //added on 2017/12/14
-        appSettings.setMainActivity(this);
-
         String key1 = appPref.getString(Constants.PREF_CLIENT_KEY1, null);
         String key2 = appPref.getString(Constants.PREF_CLIENT_KEY2, null);
 
@@ -351,12 +258,17 @@ public class NavDwrActivity extends AppCompatActivity
 
         if ((key1 == null || key1.isEmpty()) && (key2 == null || key2.isEmpty())) {
             appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil));
+            appSettings.setVasstClient(new VasstClient(registry));
         } else {
 
             byte[] key1Bytes = registry.getBase64().decodeToByteArray(key1);
             byte[] key2Bytes = registry.getBase64().decodeToByteArray(key2);
 
             appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil, key1Bytes, key2Bytes));
+
+            VasstClient vasstClient = new VasstClient(registry);
+            vasstClient.setSecretKey(key1Bytes);
+            appSettings.setVasstClient(vasstClient);
         }
         //end
 

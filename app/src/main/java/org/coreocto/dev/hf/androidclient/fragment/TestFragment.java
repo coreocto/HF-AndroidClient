@@ -5,28 +5,25 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.MimeTypeMap;
 import android.widget.Button;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.drive.*;
+import com.google.android.gms.drive.DriveFolder;
+import com.google.android.gms.drive.DriveId;
+import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 import hugo.weaving.DebugLog;
 import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
-import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
-import org.coreocto.dev.hf.commonlib.suise.util.SuiseUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -89,6 +86,7 @@ public class TestFragment extends Fragment {
     private Button bTestAdd;
     private Button bTestHugo;
     private Button bTestOpen;
+    private Button bTestPdfTxtExt;
 //    private GoogleApiClient mGoogleApiClient;
 
     @Override
@@ -149,6 +147,62 @@ public class TestFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 performFileSearch();
+            }
+        });
+
+        final Context ctx = getActivity();
+
+        this.bTestPdfTxtExt = view.findViewById(R.id.bTestPdfTxtExt);
+        this.bTestPdfTxtExt.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                File extStor = Environment.getExternalStorageDirectory();
+                File dlDir = new File(extStor,"Download");
+                File[] pdfFiles = dlDir.listFiles();
+                for (File f:pdfFiles){
+                    PdfReader reader =null;
+                    try {
+                        reader = new PdfReader(new FileInputStream(f));
+                        for (int i = 1; i <= reader.getNumberOfPages(); i++) {
+                            Log.d(TAG, PdfTextExtractor.getTextFromPage(reader, i));
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    if (reader!=null){
+                        reader.close();
+                    }
+                }
+//                for (File f:pdfFiles){
+//                    if (f.getName().endsWith(".pdf")){
+//                        PDFBoxResourceLoader.init(ctx);
+//
+//                        PDDocument document = null;
+//                        try {
+//                            document = PDDocument.load(f);
+//                        } catch(IOException e) {
+//                            e.printStackTrace();
+//                        }
+//
+//                        if (document!=null) {
+//                            try {
+//                                PDFTextStripper pdfStripper = new PDFTextStripper();
+//                                pdfStripper.setStartPage(0);
+//                                pdfStripper.setEndPage(1);
+//                                Log.d(TAG, pdfStripper.getText(document));
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//
+//                        try {
+//                            if (document != null) document.close();
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
             }
         });
 

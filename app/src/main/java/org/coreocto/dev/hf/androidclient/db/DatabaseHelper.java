@@ -12,7 +12,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("create table " + Constants.TABLE_REMOTE_DOCS +
                 "(_id integer primary key not null," +
                 "cremoteid varchar," +
-                "cremotename varchar)"
+                "cremotename varchar," +
+                "cx int)"
         );
     }
 

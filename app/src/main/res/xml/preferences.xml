@@ -16,6 +16,12 @@
         <Preference
                 android:key="prefClientClrAppDbBtn"
                 android:title="@string/pref_client_clrappdb"/>
+        <ListPreference
+                android:key="client.ssetype"
+                android:title="@string/pref_client_ssetype"
+        android:entries="@array/opt_sse_type"
+        android:entryValues="@array/opt_sse_type"/>
+            />
         <!--<Preference-->
         <!--android:title="Acts like a button"-->
         <!--android:summary="This is a cool button"-->

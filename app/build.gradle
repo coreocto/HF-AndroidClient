@@ -7,6 +7,7 @@ buildscript {
 
     dependencies {
         classpath 'com.jakewharton.hugo:hugo-plugin:1.2.1'
+        classpath 'com.itextpdf:itextg:5.5.10'
     }
 }
 
@@ -47,12 +48,16 @@ android {
         }
         debug {
             signingConfig signingConfigs.config
+            ext.enableCrashlytics = false
         }
     }
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
         }
+    }
+    dexOptions {
+        preDexLibraries = false
     }
 }
 
@@ -73,8 +78,13 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
     compile 'com.google.android.gms:play-services-auth:11.6.0'
     compile 'com.google.android.gms:play-services-drive:11.6.0'
-    compile 'com.github.coreocto:HF-ClientLib:520d667a9b'
+    compile 'com.github.coreocto:HF-ClientLib:c2c42af563'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
+    compile 'com.itextpdf:itextg:5.5.10'
+    // https://mvnrepository.com/artifact/commons-io/commons-io
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+
+
     testCompile 'junit:junit:4.12'
 }
 

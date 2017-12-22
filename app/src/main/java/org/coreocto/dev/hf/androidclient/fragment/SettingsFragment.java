@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.EditTextPreference;
+import android.preference.ListPreference;
 import android.preference.Preference;
 import android.util.Log;
 import com.github.machinarius.preferencefragment.PreferenceFragment;
@@ -15,9 +16,11 @@ import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
+import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Created by John on 9/9/2017.
@@ -29,6 +32,7 @@ public class SettingsFragment extends PreferenceFragment {
     private EditTextPreference prefClientKey2 = null;
     private EditTextPreference prefServerHostname = null;
     private EditTextPreference prefClientDatadir = null;
+    private ListPreference prefClientSsetype = null;
     private static final String TAG = "SettingsFragment";
 
     public SettingsFragment() {
@@ -72,6 +76,8 @@ public class SettingsFragment extends PreferenceFragment {
         addPreferencesFromResource(R.xml.preferences);
 
         final Context ctx = getActivity();
+
+        prefClientSsetype = (ListPreference) findPreference(Constants.PREF_CLIENT_SSE_TYPE);
 
         prefClientKey1 = (EditTextPreference) findPreference(Constants.PREF_CLIENT_KEY1);
         prefClientKey1.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
@@ -149,6 +155,9 @@ public class SettingsFragment extends PreferenceFragment {
                 SuiseClient suiseClient = AppSettings.getInstance().getSuiseClient();
                 Registry registry = AppSettings.getInstance().getRegistry();
                 suiseClient.Gen(16);
+
+                VasstClient vasstClient = AppSettings.getInstance().getVasstClient();
+                vasstClient.setSecretKey(suiseClient.getKey1());
 
                 String key1Str = registry.getBase64().encodeToString(suiseClient.getKey1());
                 String key2Str = registry.getBase64().encodeToString(suiseClient.getKey2());

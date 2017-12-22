@@ -26,6 +26,7 @@ import com.google.android.gms.drive.events.OnChangeListener;
 import com.google.android.gms.tasks.*;
 import com.google.gson.Gson;
 import okhttp3.*;
+import org.apache.commons.io.FilenameUtils;
 import org.coreocto.dev.hf.androidclient.Constants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
@@ -34,15 +35,18 @@ import org.coreocto.dev.hf.androidclient.benchmark.AddTokenStopWatch;
 import org.coreocto.dev.hf.androidclient.benchmark.DocEncryptStopWatch;
 import org.coreocto.dev.hf.androidclient.benchmark.IndexUploadStopWatch;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
+import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
 import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
+import org.coreocto.dev.hf.clientlib.parser.IFileParser;
+import org.coreocto.dev.hf.clientlib.parser.TxtFileParserImpl;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
+import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.suise.bean.AddTokenResult;
+import org.coreocto.dev.hf.commonlib.vasst.bean.TermFreq;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -78,7 +82,7 @@ public class AddFragment extends Fragment {
 //                    Log.d(TAG, "Created a file with content: " + driveId);
 //                    Log.d(TAG, "Resource Id: " + driveId.getResourceId());
 
-                    //comment
+    //comment
 //                    DriveFile driveFile = Drive.DriveApi.getFile(mGoogleApiClient, driveId);
 //                    driveFile.addChangeSubscription(mGoogleApiClient);
 //                }
@@ -129,10 +133,9 @@ public class AddFragment extends Fragment {
 
         final AppSettings appSettings = AppSettings.getInstance();
 
-//        mGoogleApiClient = ((NavDwrActivity) ctx).getGoogleApiClient();
-        mGoogleSignInClient = ((NavDwrActivity)ctx).getGoogleSignInClient();
-        mDriveClient = ((NavDwrActivity)ctx).getDriveClient();
-        mDriveResourceClient = ((NavDwrActivity)ctx).getDriveResourceClient();
+        mGoogleSignInClient = ((NavDwrActivity) ctx).getGoogleSignInClient();
+        mDriveClient = ((NavDwrActivity) ctx).getDriveClient();
+        mDriveResourceClient = ((NavDwrActivity) ctx).getDriveResourceClient();
 
         this.uploadFileList = new ArrayList<>();
 
@@ -184,21 +187,6 @@ public class AddFragment extends Fragment {
             };
 
             private OkHttpClient httpClient = new OkHttpClient();
-
-//            private Handler networkErrorHandler = new Handler() {
-//                @Override
-//                public void handleMessage(Message msg) {// handler接收到消息后就会执行此方法
-//
-//                    progressDialog.dismiss();// 关闭ProgressDialog
-//                    AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-//                    builder.setTitle("Error")
-//                            .setMessage("Cannot connect to server.")
-//                            .setCancelable(false)
-//                            .setPositiveButton("OK", null)
-//                            .show();
-//
-//                }
-//            };
 
             private void pushStat(Object obj, String type) {
 
@@ -285,30 +273,30 @@ public class AddFragment extends Fragment {
                                 return mDriveResourceClient.createFile(parent, changeSet, contents);
                             }
                         }).addOnSuccessListener(activity, new OnSuccessListener<DriveFile>() {
+                    @Override
+                    public void onSuccess(DriveFile driveFile) {
+                        Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
+
+                        mDriveResourceClient.addChangeListener(driveFile, new OnChangeListener() {
+
+                            /**
+                             * A listener to handle file change events.
+                             */
                             @Override
-                            public void onSuccess(DriveFile driveFile) {
-                                Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
+                            public void onChange(ChangeEvent changeEvent) {
+                                Log.d(TAG, "docId: " + docId);
+                                Log.d(TAG, "onChange(), " + changeEvent.getDriveId() + ", resourceId: " + changeEvent.getDriveId().getResourceId());
 
-                                mDriveResourceClient.addChangeListener(driveFile, new OnChangeListener() {
-
-                                    /**
-                                     * A listener to handle file change events.
-                                     */
-                                    @Override
-                                    public void onChange(ChangeEvent changeEvent) {
-                                        Log.d(TAG, "docId: " + docId);
-                                        Log.d(TAG, "onChange(), " + changeEvent.getDriveId() + ", resourceId: " + changeEvent.getDriveId().getResourceId());
-
-                                        {
-                                            ContentValues values = new ContentValues();
-                                            values.put("cremoteid", changeEvent.getDriveId().encodeToString());
-                                            long affectedRows = databaseHelper.getWritableDatabase().update(Constants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
-                                            Log.d(TAG, "affectedRows(update): " + affectedRows);
-                                        }
-                                    }
-                                });
+                                {
+                                    ContentValues values = new ContentValues();
+                                    values.put("cremoteid", changeEvent.getDriveId().encodeToString());
+                                    long affectedRows = databaseHelper.getWritableDatabase().update(Constants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
+                                    Log.d(TAG, "affectedRows(update): " + affectedRows);
+                                }
                             }
-                        })
+                        });
+                    }
+                })
                         .addOnFailureListener(activity, new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
@@ -316,58 +304,6 @@ public class AddFragment extends Fragment {
                             }
                         });
 
-//                Drive.DriveApi.newDriveContents(mGoogleApiClient)
-//                        .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
-//
-//                            @Override
-//                            public void onResult(@NonNull DriveApi.DriveContentsResult result) {
-//                                // If the operation was not successful, we cannot do anything and must fail.
-//                                if (!result.getStatus().isSuccess()) {
-//                                    Log.i(TAG, "Failed to create new contents.");
-//                                    return;
-//                                }
-//
-//                                // Otherwise, we can write our data to the new contents.
-////                                Log.i(TAG, "New contents created.");
-//                                // Get an output stream for the contents.
-//                                OutputStream outputStream = result.getDriveContents().getOutputStream();
-//                                // Write file data from it.
-//                                FileInputStream inputStream = null;
-//                                try {
-//                                    inputStream = new FileInputStream(srcFile);
-//
-//                                    suiseClient.Enc(inputStream, outputStream);
-//
-//                                } catch (Exception e1) {
-//                                    Log.i(TAG, "Unable to write file contents.");
-//                                }
-//
-//                                if (inputStream != null) {
-//                                    try {
-//                                        inputStream.close();
-//                                    } catch (IOException e) {
-//                                    }
-//                                }
-//
-//                                if (outputStream != null) {
-//                                    try {
-//                                        outputStream.close();
-//                                    } catch (IOException e) {
-//                                    }
-//                                }
-//
-//                                // Create the initial metadata - MIME type and title.
-//                                // Note that the user will be able to change the title later.
-//                                MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
-//                                        .setMimeType("application/octet-stream").setTitle(docId).build();
-//
-//                                // Create a file in the root folder
-//                                Drive.DriveApi.getRootFolder(mGoogleApiClient)
-//                                        .createFile(mGoogleApiClient, changeSet, result.getDriveContents(),
-//                                                new ExecutionOptions.Builder().setNotifyOnCompletion(true).build())
-//                                        .setResultCallback(fileCallback);
-//                            }
-//                        });
             }
 
             @Override
@@ -385,6 +321,7 @@ public class AddFragment extends Fragment {
 
                 final String hostname = appSettings.getAppPref().getString(Constants.PREF_SERVER_HOSTNAME, null);
                 final String datadir = appSettings.getAppPref().getString(Constants.PREF_CLIENT_DATA_DIR, null);
+                final String ssetype = appSettings.getAppPref().getString(Constants.PREF_CLIENT_SSE_TYPE, Constants.PREF_CLIENT_SSE_TYPE_SUISE);
 
                 progressDialog = new ProgressDialog(ctx, ProgressDialog.STYLE_SPINNER);
                 progressDialog.setTitle("Uploading...");
@@ -398,6 +335,7 @@ public class AddFragment extends Fragment {
                 //final OkHttpClient httpClient = new OkHttpClient();
 
                 final SuiseClient client = appSettings.getSuiseClient();
+                final VasstClient vasstClient = appSettings.getVasstClient();
 
                 final String extStore = Environment.getExternalStorageDirectory().toString();
 
@@ -447,6 +385,13 @@ public class AddFragment extends Fragment {
 
                                         FormBody.Builder formBodyBuilder = new FormBody.Builder();
 
+                                        IFileParser fileParser = null;
+                                        if (FilenameUtils.getExtension(srcFile.getAbsolutePath()).equalsIgnoreCase("pdf")) {
+                                            fileParser = new PdfFileParserImpl();
+                                        }else{
+                                            fileParser = new TxtFileParserImpl();
+                                        }
+
                                         try {
 
                                             docId = UUID.randomUUID().toString();
@@ -472,39 +417,65 @@ public class AddFragment extends Fragment {
 
                                             // end of encrypt file
 
+                                            if (ssetype.equalsIgnoreCase(Constants.PREF_CLIENT_SSE_TYPE_SUISE)) {
 
-                                            // begin of create search token
-                                            final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
-                                            adStopWatch.start();
+                                                // begin of create search token
+                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
+                                                adStopWatch.start();
 
-                                            // the token file
-                                            AddTokenResult addTokenResult = client.AddToken(srcFile, false);
 
-                                            // modified on 2017/12/14
-                                            // does not use SSE scheme's id method anymore
-                                            // use the one generate above
-                                            addTokenResult.setId(docId);
+                                                // the token file
+                                                AddTokenResult addTokenResult = client.AddToken(srcFile, false, docId, fileParser);
 
-                                            adStopWatch.stop();
-                                            adStopWatch.setName(addTokenResult.getId());
-                                            adStopWatch.setWordCount(addTokenResult.getC().size());
+                                                adStopWatch.stop();
+                                                adStopWatch.setName(addTokenResult.getId());
+                                                adStopWatch.setWordCount(addTokenResult.getC().size());
 
-                                            //docId = addTokenResult.getId();
+                                                //docId = addTokenResult.getId();
 
-                                            if (enableStatRpt) {
-                                                pushStat(adStopWatch, Constants.SW_TYPE_ADD_TOKEN);
-                                            }
-                                            // end of create search token
+                                                if (enableStatRpt) {
+                                                    pushStat(adStopWatch, Constants.SW_TYPE_ADD_TOKEN);
+                                                }
+                                                // end of create search token
 
 //                                            Log.d(TAG, "adStopWatch = " + adStopWatch.toString());
 
-                                            String token = gson.toJson(addTokenResult);
+                                                String token = gson.toJson(addTokenResult);
 
 //                                            Log.d(TAG, "token = " + token);
 //                                            Log.d(TAG, "docId = " + docId);
 
-                                            formBodyBuilder = formBodyBuilder.add("token", token);
-                                            formBodyBuilder = formBodyBuilder.add("docId", docId);
+                                                formBodyBuilder = formBodyBuilder.add("token", token);
+                                                formBodyBuilder = formBodyBuilder.add("docId", docId);
+                                            } else if (ssetype.equalsIgnoreCase(Constants.PREF_CLIENT_SSE_TYPE_VASST)) {
+
+                                                // TODO: need to think of a method to ensure same x when performing search
+                                                // current workaround, use the first byte of the secret key
+
+                                                byte x = vasstClient.getSecretKey()[0]; //(byte)(Math.random()*127);
+
+                                                {
+                                                    ContentValues values = new ContentValues();
+                                                    values.put("cx", x);
+                                                    long affectedRows = databaseHelper.getWritableDatabase().update(Constants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
+                                                    Log.d(TAG, "affectedRows(update): " + affectedRows);
+                                                }
+
+                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
+                                                adStopWatch.start();
+
+                                                TermFreq termFreq = vasstClient.Preprocessing(srcFile, x, fileParser);
+
+                                                adStopWatch.stop();
+                                                adStopWatch.setName(docId);
+                                                adStopWatch.setWordCount(termFreq.getTerms().size());   //this is not the actual size, will modify it later
+
+                                                String terms = gson.toJson(termFreq);
+
+                                                formBodyBuilder = formBodyBuilder.add("terms", terms);
+                                                formBodyBuilder = formBodyBuilder.add("docId", docId);
+                                                formBodyBuilder = formBodyBuilder.add("type", Constants.PREF_CLIENT_SSE_TYPE_VASST);
+                                            }
 
                                         } catch (Exception e) {
                                             e.printStackTrace();

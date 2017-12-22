@@ -10,6 +10,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
         <Button
+                android:text="Test Pdf Text Extraction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:id="@+id/bTestPdfTxtExt" android:layout_weight="1"/>
+        <Button
                 android:text="Test Hugo Plugin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:id="@+id/bTestHugo" android:layout_weight="1"/>
