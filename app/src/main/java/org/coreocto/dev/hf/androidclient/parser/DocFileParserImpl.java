@@ -1,16 +1,13 @@
 package org.coreocto.dev.hf.androidclient.parser;
 
 import android.util.Log;
-import org.apache.commons.lang.StringUtils;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.clientlib.Constants;
 import org.coreocto.dev.hf.clientlib.parser.IFileParser;
+import org.textmining.text.extraction.WordExtractor;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,26 +21,27 @@ public class DocFileParserImpl implements IFileParser {
 
         List<String> result = new ArrayList<>();
 
-        XWPFDocument doc = null;
+        //创建输入流用来读取doc文件
+        FileInputStream in = null;
+        String text = null;
         try {
-            doc = new XWPFDocument(new FileInputStream(file));
-            for (XWPFParagraph paragraph : doc.getParagraphs()) {
-                String pageText = paragraph.getText();
-                pageText = pageText.toLowerCase();
-                result.addAll(Arrays.asList(pageText.split(Constants.SPACE)));
-//                String content = StringUtils.abbreviate(paragraph.getText(), 20);
-//                if (StringUtils.isEmpty(content)) {
-//                    content = "<empty>";
-//                }
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "error when reading content from file", e);
-        } finally {
+            in = new FileInputStream(file);
+            WordExtractor extractor = new WordExtractor();
+            //进行提取对doc文件
+            text = extractor.extractText(in);
+            text = text.toLowerCase();
+            result.addAll(Arrays.asList(text.split(Constants.SPACE)));
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+        if (in != null) {
             try {
-                doc.close();
+                in.close();
             } catch (IOException e) {
             }
         }
+
         return result;
     }
 }
