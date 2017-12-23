@@ -83,7 +83,7 @@ dependencies {
     compile 'com.itextpdf:itextg:5.5.10'
     // https://mvnrepository.com/artifact/commons-io/commons-io
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
-
+    compile 'com.github.SUPERCILEX.poi-android:poi:3.17'
 
     testCompile 'junit:junit:4.12'
 }
