@@ -1,16 +1,17 @@
-package org.coreocto.dev.hf.androidclient.util;
+package org.coreocto.dev.hf.androidclient.crypto;
 
 import org.coreocto.dev.hf.commonlib.crypto.IHashFunc;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class AndroidSha1Impl implements IHashFunc {
-    private MessageDigest sha1 = null;
+public class AndroidMd5Impl implements IHashFunc {
+
+    private MessageDigest md5 = null;
 
     {
         try {
-            sha1 = MessageDigest.getInstance("MD5");
+            md5 = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -32,6 +33,6 @@ public class AndroidSha1Impl implements IHashFunc {
             return null;
         }
 
-        return sha1.digest(bytes);
+        return md5.digest(bytes);
     }
 }

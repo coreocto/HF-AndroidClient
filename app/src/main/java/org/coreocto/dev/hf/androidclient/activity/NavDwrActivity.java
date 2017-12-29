@@ -2,13 +2,10 @@ package org.coreocto.dev.hf.androidclient.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -23,32 +20,27 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.*;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveClient;
 import com.google.android.gms.drive.DriveResourceClient;
 import com.google.gson.Gson;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkParam;
 import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkTask;
+import org.coreocto.dev.hf.androidclient.crypto.AndroidAes128CbcImpl;
+import org.coreocto.dev.hf.androidclient.crypto.AndroidMd5Impl;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
-import org.coreocto.dev.hf.androidclient.fragment.AddFragment;
-import org.coreocto.dev.hf.androidclient.fragment.SearchFragment;
-import org.coreocto.dev.hf.androidclient.fragment.SettingsFragment;
-import org.coreocto.dev.hf.androidclient.fragment.TestFragment;
+import org.coreocto.dev.hf.androidclient.fragment.*;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.ChartResultFragment;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItem;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemFragment;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemRecyclerViewAdapter;
-import org.coreocto.dev.hf.androidclient.util.AndroidAes128CbcImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
-import org.coreocto.dev.hf.androidclient.util.AndroidMd5Impl;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.suise.util.SuiseUtil;
@@ -63,7 +55,8 @@ public class NavDwrActivity extends AppCompatActivity
         SearchFragment.OnFragmentInteractionListener,
         TestFragment.OnFragmentInteractionListener,
         CryptoTestItemFragment.OnListFragmentInteractionListener,
-        ChartResultFragment.OnFragmentInteractionListener {
+        ChartResultFragment.OnFragmentInteractionListener,
+        UploadFragment.OnFragmentInteractionListener {
 
     private static final String TAG = "NavDwrActivity";
     private static final int REQUEST_CODE_SIGN_IN = 0;
@@ -97,7 +90,7 @@ public class NavDwrActivity extends AppCompatActivity
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_SIGN_IN){
+        if (requestCode == REQUEST_CODE_SIGN_IN) {
             Log.i(TAG, "Signed in successfully.");
             // Use the last signed in account here since it already have a Drive scope.
             mDriveClient = Drive.getDriveClient(this, GoogleSignIn.getLastSignedInAccount(this));
@@ -137,8 +130,10 @@ public class NavDwrActivity extends AppCompatActivity
         } else if (id == R.id.nav_crypto_test) {
             fragmentClass = CryptoTestItemFragment.class;
             fab.setVisibility(View.VISIBLE);
-        } else if (id == Constants.FRAGMENT_CHART_RESULT) {
+        } else if (id == AppConstants.FRAGMENT_CHART_RESULT) {
             fragmentClass = ChartResultFragment.class;
+        } else if (id == R.id.nav_upload) {
+            fragmentClass = UploadFragment.class;
         }
 
         try {
@@ -154,7 +149,6 @@ public class NavDwrActivity extends AppCompatActivity
         // Insert the fragment by replacing any existing fragment
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.content_view, fragment).commit();
-
 
         return fragment;
     }
@@ -186,10 +180,10 @@ public class NavDwrActivity extends AppCompatActivity
                     } else {
 
                         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(NavDwrActivity.this);
-                        String sRunCnt = settings.getString(Constants.PREF_CT_NUM_OF_EXEC, Constants.PREF_CT_DEFAULT_RUN_CNT);
-                        String sDataSize = settings.getString(Constants.PREF_CT_DATA_SIZE, Constants.PREF_CT_DEFAULT_DATA_SIZE);
-                        Boolean bAllocMem = settings.getBoolean(Constants.PREF_CT_ALLOC_MEM, false);
-                        Boolean bExplicitGc = settings.getBoolean(Constants.PREF_CT_EXPLICIT_GC, false);
+                        String sRunCnt = settings.getString(AppConstants.PREF_CT_NUM_OF_EXEC, AppConstants.PREF_CT_DEFAULT_RUN_CNT);
+                        String sDataSize = settings.getString(AppConstants.PREF_CT_DATA_SIZE, AppConstants.PREF_CT_DEFAULT_DATA_SIZE);
+                        Boolean bAllocMem = settings.getBoolean(AppConstants.PREF_CT_ALLOC_MEM, false);
+                        Boolean bExplicitGc = settings.getBoolean(AppConstants.PREF_CT_EXPLICIT_GC, false);
 
                         int runCnt = -1;
                         int dataSize = -1;
@@ -236,10 +230,10 @@ public class NavDwrActivity extends AppCompatActivity
         appSettings.setAppPref(appPref);
         appSettings.setGson(new Gson());
 
-        String key1 = appPref.getString(Constants.PREF_CLIENT_KEY1, null);
-        String key2 = appPref.getString(Constants.PREF_CLIENT_KEY2, null);
+        String key1 = appPref.getString(AppConstants.PREF_CLIENT_KEY1, null);
+        String key2 = appPref.getString(AppConstants.PREF_CLIENT_KEY2, null);
 
-        ILogger suiseLogger = new ILogger() {
+        ILogger debugLogger = new ILogger() {
             @Override
             public void log(String s, String s1) {
                 Log.d(s, s1);
@@ -250,7 +244,7 @@ public class NavDwrActivity extends AppCompatActivity
         registry.setBase64(new AndroidBase64Impl());
         registry.setHashFunc(new AndroidMd5Impl());
         registry.setBlockCipherCbc(new AndroidAes128CbcImpl());
-        registry.setLogger(suiseLogger);
+        registry.setLogger(debugLogger);
         appSettings.setRegistry(registry);
 
         SuiseUtil suiseUtil = new SuiseUtil(registry);
@@ -264,7 +258,7 @@ public class NavDwrActivity extends AppCompatActivity
             byte[] key1Bytes = registry.getBase64().decodeToByteArray(key1);
             byte[] key2Bytes = registry.getBase64().decodeToByteArray(key2);
 
-            appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil, key1Bytes, key2Bytes));
+            appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil, key1Bytes, key2Bytes, null, null));
 
             VasstClient vasstClient = new VasstClient(registry);
             vasstClient.setSecretKey(key1Bytes);
@@ -272,20 +266,29 @@ public class NavDwrActivity extends AppCompatActivity
         }
         //end
 
-        DatabaseHelper databaseHelper = new DatabaseHelper(this, Constants.LOCAL_APP_DB, null, 1);
+        byte[] defaultIv = new byte[16];
+        appSettings.getSuiseClient().setIv1(defaultIv);
+        appSettings.getSuiseClient().setIv2(defaultIv);
+        appSettings.getVasstClient().setIv(defaultIv);
+
+        DatabaseHelper databaseHelper = new DatabaseHelper(this, AppConstants.LOCAL_APP_DB, null, 1);
         appSettings.setDatabaseHelper(databaseHelper);
 
         this.signIn();
     }
 
-    /** Start sign in activity. */
+    /**
+     * Start sign in activity.
+     */
     private void signIn() {
         Log.i(TAG, "Start sign in");
         mGoogleSignInClient = buildGoogleSignInClient();
         startActivityForResult(mGoogleSignInClient.getSignInIntent(), REQUEST_CODE_SIGN_IN);
     }
 
-    /** Build a Google SignIn client. */
+    /**
+     * Build a Google SignIn client.
+     */
     private GoogleSignInClient buildGoogleSignInClient() {
         GoogleSignInOptions signInOptions =
                 new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

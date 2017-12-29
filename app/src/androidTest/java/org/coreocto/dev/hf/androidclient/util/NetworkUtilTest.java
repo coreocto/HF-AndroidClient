@@ -1,13 +1,11 @@
-package org.coreocto.dev.hf.androidclient;
+package org.coreocto.dev.hf.androidclient.util;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
-import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)

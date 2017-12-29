@@ -1,4 +1,4 @@
-package org.coreocto.dev.hf.androidclient.util;
+package org.coreocto.dev.hf.androidclient.crypto;
 
 import org.coreocto.dev.hf.commonlib.crypto.IBlockCipherCbc;
 

@@ -17,7 +17,7 @@ import com.google.android.gms.drive.DriveId;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 import hugo.weaving.DebugLog;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 
@@ -137,7 +137,7 @@ public class TestFragment extends Fragment {
 
                 Intent myIntent = new Intent(Intent.ACTION_VIEW);
                 String extStore = Environment.getExternalStorageDirectory().toString();
-                File dir = new File(extStore + File.separator + AppSettings.getInstance().getAppPref().getString(Constants.PREF_CLIENT_DATA_DIR, null));
+                File dir = new File(extStore + File.separator + AppSettings.getInstance().getAppPref().getString(AppConstants.PREF_CLIENT_DATA_DIR, null));
                 File[] docList = dir.listFiles();
                 myIntent.setDataAndType(Uri.fromFile(docList[0]), "text/plain");
 //                myIntent.setData(Uri.fromFile(docList[0]));

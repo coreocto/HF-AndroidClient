@@ -10,9 +10,8 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.util.Log;
 import com.github.machinarius.preferencefragment.PreferenceFragment;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.R;
-import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
@@ -20,7 +19,6 @@ import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * Created by John on 9/9/2017.
@@ -52,7 +50,7 @@ public class SettingsFragment extends PreferenceFragment {
 
     private static void updateSummary(EditTextPreference pref, String newValue) {
         if (newValue == null || newValue.toString().isEmpty()) {
-            pref.setSummary(Constants.PREF_EMPTY_VAL_PLACEHOLDER);
+            pref.setSummary(AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
         } else {
             pref.setSummary(newValue);
         }
@@ -77,9 +75,9 @@ public class SettingsFragment extends PreferenceFragment {
 
         final Context ctx = getActivity();
 
-        prefClientSsetype = (ListPreference) findPreference(Constants.PREF_CLIENT_SSE_TYPE);
+        prefClientSsetype = (ListPreference) findPreference(AppConstants.PREF_CLIENT_SSE_TYPE);
 
-        prefClientKey1 = (EditTextPreference) findPreference(Constants.PREF_CLIENT_KEY1);
+        prefClientKey1 = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_KEY1);
         prefClientKey1.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -87,7 +85,7 @@ public class SettingsFragment extends PreferenceFragment {
                 return true;
             }
         });
-        prefClientKey2 = (EditTextPreference) findPreference(Constants.PREF_CLIENT_KEY2);
+        prefClientKey2 = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_KEY2);
         prefClientKey2.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -95,7 +93,7 @@ public class SettingsFragment extends PreferenceFragment {
                 return true;
             }
         });
-        prefServerHostname = (EditTextPreference) findPreference(Constants.PREF_SERVER_HOSTNAME);
+        prefServerHostname = (EditTextPreference) findPreference(AppConstants.PREF_SERVER_HOSTNAME);
         prefServerHostname.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -103,7 +101,7 @@ public class SettingsFragment extends PreferenceFragment {
                 return true;
             }
         });
-        prefClientDatadir = (EditTextPreference) findPreference(Constants.PREF_CLIENT_DATA_DIR);
+        prefClientDatadir = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_DATA_DIR);
         prefClientDatadir.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -126,9 +124,9 @@ public class SettingsFragment extends PreferenceFragment {
             }
         });
 
-        updateSummary(prefClientKey1, Constants.PREF_EMPTY_VAL_PLACEHOLDER);
-        updateSummary(prefClientKey2, Constants.PREF_EMPTY_VAL_PLACEHOLDER);
-        updateSummary(prefServerHostname, Constants.PREF_EMPTY_VAL_PLACEHOLDER);
+        updateSummary(prefClientKey1, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
+        updateSummary(prefClientKey2, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
+        updateSummary(prefServerHostname, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
 
         //added on 15/12/2017 for removing all records from app db
         Preference prefClientClrAppDbBtn = findPreference("prefClientClrAppDbBtn");
@@ -138,7 +136,7 @@ public class SettingsFragment extends PreferenceFragment {
 
                 DatabaseHelper databaseHelper = AppSettings.getInstance().getDatabaseHelper();
                 SQLiteDatabase database = databaseHelper.getWritableDatabase();
-                long affectedRows = database.delete(Constants.TABLE_REMOTE_DOCS, null, null);
+                long affectedRows = database.delete(AppConstants.TABLE_REMOTE_DOCS, null, null);
 
                 Log.d(TAG, "deletedRows: "+affectedRows);
 

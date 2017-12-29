@@ -3,13 +3,13 @@ package org.coreocto.dev.hf.androidclient.db;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table " + Constants.TABLE_REMOTE_DOCS +
+        db.execSQL("create table " + AppConstants.TABLE_REMOTE_DOCS +
                 "(_id integer primary key not null," +
                 "cremoteid varchar," +
                 "cremotename varchar," +

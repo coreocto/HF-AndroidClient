@@ -17,7 +17,7 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkResult;
 
@@ -121,7 +121,7 @@ public class ChartResultFragment extends Fragment {
                     if (value == (int) value) {
                         return xLabel.get((int) value);
                     } else {
-                        return Constants.EMPTY_STRING;
+                        return AppConstants.EMPTY_STRING;
                     }
                 }
             });

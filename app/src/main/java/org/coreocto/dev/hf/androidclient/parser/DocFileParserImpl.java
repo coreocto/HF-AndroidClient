@@ -1,13 +1,11 @@
 package org.coreocto.dev.hf.androidclient.parser;
 
 import android.util.Log;
-import org.coreocto.dev.hf.clientlib.Constants;
+import org.coreocto.dev.hf.clientlib.LibConstants;
 import org.coreocto.dev.hf.clientlib.parser.IFileParser;
 import org.textmining.text.extraction.WordExtractor;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,27 +17,30 @@ public class DocFileParserImpl implements IFileParser {
     @Override
     public List<String> getText(File file) {
 
-        List<String> result = new ArrayList<>();
+        List<String> result = null;
 
-        //创建输入流用来读取doc文件
-        FileInputStream in = null;
-        String text = null;
         try {
-            in = new FileInputStream(file);
-            WordExtractor extractor = new WordExtractor();
-            //进行提取对doc文件
-            text = extractor.extractText(in);
-            text = text.toLowerCase();
-            result.addAll(Arrays.asList(text.split(Constants.SPACE)));
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
+            result = getText(new BufferedInputStream(new FileInputStream(file)));
+        } catch (FileNotFoundException e) {
+            Log.e(TAG, "error when reading content from file", e);
         }
 
-        if (in != null) {
-            try {
-                in.close();
-            } catch (IOException e) {
-            }
+        return result;
+    }
+
+    @Override
+    public List<String> getText(InputStream inputStream) {
+        List<String> result = new ArrayList<>();
+
+        String text = null;
+        try {
+            WordExtractor extractor = new WordExtractor();
+            //进行提取对doc文件
+            text = extractor.extractText(inputStream);
+            text = text.toLowerCase();
+            result.addAll(Arrays.asList(text.split(LibConstants.REGEX_SPLIT_CHARS)));
+        } catch (Exception e) {
+            Log.e(TAG, "error when reading content from file", e);
         }
 
         return result;

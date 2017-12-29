@@ -1,6 +1,6 @@
 package org.coreocto.dev.hf.androidclient;
 
-public class Constants {
+public class AppConstants {
     public static final String EMPTY_STRING = "";
     public static final String SPACE = " ";
     public static final String PREF_EMPTY_VAL_PLACEHOLDER = "<empty>";

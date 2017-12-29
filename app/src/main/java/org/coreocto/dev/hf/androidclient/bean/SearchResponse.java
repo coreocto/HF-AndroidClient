@@ -5,7 +5,7 @@ import java.util.List;
 public class SearchResponse extends Response {
 
     private Integer count;
-    private List<String> files;
+    private List<FileInfo> files;
 
     public Integer getCount() {
         return count;
@@ -15,11 +15,11 @@ public class SearchResponse extends Response {
         this.count = count;
     }
 
-    public List<String> getFiles() {
+    public List<FileInfo> getFiles() {
         return files;
     }
 
-    public void setFiles(List<String> files) {
+    public void setFiles(List<FileInfo> files) {
         this.files = files;
     }
 

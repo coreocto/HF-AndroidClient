@@ -3,7 +3,7 @@ package org.coreocto.dev.hf.androidclient.util;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.telephony.TelephonyManager;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -25,7 +25,7 @@ public class NetworkUtil {
     public static boolean isHostFound(String hostname) {
         try {
             final InetAddress address = InetAddress.getByName(hostname);
-            return !address.equals(Constants.EMPTY_STRING);
+            return !address.equals(AppConstants.EMPTY_STRING);
         } catch (UnknownHostException e) {
             // Log error
         }

@@ -5,7 +5,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Debug;
 import android.util.Log;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.ChartResultFragment;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
@@ -392,7 +392,7 @@ public class BenchmarkTask extends AsyncTask<BenchmarkParam, BenchmarkResult, Li
 
         mDialog.dismiss();
         if (mContext instanceof NavDwrActivity) {
-            ChartResultFragment chartResultFrag = (ChartResultFragment) ((NavDwrActivity) mContext).goToFragment(Constants.FRAGMENT_CHART_RESULT, true);
+            ChartResultFragment chartResultFrag = (ChartResultFragment) ((NavDwrActivity) mContext).goToFragment(AppConstants.FRAGMENT_CHART_RESULT, true);
             chartResultFrag.setBarChartData(resultList);
         }
     }

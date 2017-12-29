@@ -1,6 +1,5 @@
 package org.coreocto.dev.hf.androidclient.fragment;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -18,29 +17,29 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.MimeTypeMap;
 import android.widget.*;
-import com.google.android.gms.drive.*;
-import com.google.android.gms.drive.events.OpenFileCallback;
+import com.google.android.gms.drive.DriveContents;
+import com.google.android.gms.drive.DriveFile;
+import com.google.android.gms.drive.DriveId;
+import com.google.android.gms.drive.DriveResourceClient;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
 import okhttp3.*;
-import org.coreocto.dev.hf.androidclient.Constants;
+import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
+import org.coreocto.dev.hf.androidclient.bean.FileInfo;
 import org.coreocto.dev.hf.androidclient.bean.SearchResponse;
 import org.coreocto.dev.hf.androidclient.view.SearchResultAdapter;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
-import org.coreocto.dev.hf.commonlib.vasst.bean.SearchResult;
+import org.coreocto.dev.hf.commonlib.Constants;
 
 import java.io.*;
-import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -66,8 +65,8 @@ public class SearchFragment extends Fragment {
     private EditText etKeyword = null;
     private Button bSearch = null;
     private ListView lvFileList = null;
-    private ArrayAdapter<String> arrayAdapter = null;
-    private List<String> fileList = null;
+    private ArrayAdapter<FileInfo> arrayAdapter = null;
+    private List<FileInfo> fileList = null;
 
     public SearchFragment() {
         // Required empty public constructor
@@ -104,7 +103,7 @@ public class SearchFragment extends Fragment {
 
         this.fileList = new ArrayList<>();
 
-        this.arrayAdapter = new SearchResultAdapter(ctx, android.R.layout.simple_list_item_1, fileList);
+        this.arrayAdapter = new SearchResultAdapter(ctx, fileList);
 
         final SuiseClient client = appSettings.getSuiseClient();
         final VasstClient vasstClient = appSettings.getVasstClient();
@@ -113,23 +112,25 @@ public class SearchFragment extends Fragment {
         lvFileList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                final String docId = arrayAdapter.getItem(position);
+                FileInfo fileInfo = arrayAdapter.getItem(position);
+                final String docId = fileInfo.getName();
+                final int fileType = fileInfo.getType();
 
-                Log.d(TAG, "docId: "+docId);
+                Log.d(TAG, "docId: " + docId);
 
                 SQLiteDatabase database = appSettings.getDatabaseHelper().getReadableDatabase();
-                Cursor c = database.rawQuery("select cremoteid from "+Constants.TABLE_REMOTE_DOCS+" where cremotename=?", new String[]{docId});
+                Cursor c = database.rawQuery("select cremoteid from " + AppConstants.TABLE_REMOTE_DOCS + " where cremotename=?", new String[]{docId});
 
                 boolean recExists = false;
                 String remoteId = null;
 
-                while (c.moveToNext()){
+                while (c.moveToNext()) {
                     remoteId = c.getString(c.getColumnIndex("cremoteid"));
                 }
 
                 c.close();
 
-                Log.d(TAG, "remoteId: "+remoteId);
+                Log.d(TAG, "remoteId: " + remoteId);
 
                 DriveId driveId = DriveId.decodeFromString(remoteId);
 
@@ -147,42 +148,59 @@ public class SearchFragment extends Fragment {
                                 DriveContents contents = task.getResult();
 
                                 File extStor = Environment.getExternalStorageDirectory();
-                                File dataDir = new File(extStor, Constants.LOCAL_APP_FOLDER);
-                                if (!dataDir.exists()){
+                                File dataDir = new File(extStor, AppConstants.LOCAL_APP_FOLDER);
+                                if (!dataDir.exists()) {
                                     dataDir.mkdir();
                                 }
 
                                 // Process contents...
                                 // copy file content to temp file
-                                File tempFile = File.createTempFile("hfac", Constants.FILE_EXT_ENCRYPTED, dataDir);
-
-                                BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile));
-                                BufferedInputStream is = new BufferedInputStream(contents.getInputStream());
-                                int data = -1;
-                                while ((data = is.read()) != -1) {
-                                    os.write(data);
+                                File tempFile = File.createTempFile("hfac", AppConstants.FILE_EXT_ENCRYPTED, dataDir);
+                                BufferedOutputStream os = null;
+                                BufferedInputStream is = null;
+                                try {
+                                    os = new BufferedOutputStream(new FileOutputStream(tempFile));
+                                    is = new BufferedInputStream(contents.getInputStream());
+                                    int data = -1;
+                                    while ((data = is.read()) != -1) {
+                                        os.write(data);
+                                    }
+                                } catch (IOException e) {
+                                    Log.e(TAG, "error when copy file to temp storage", e);
                                 }
                                 if (is != null) {
-                                    is.close();
+                                    try {
+                                        is.close();
+                                    } catch (IOException e) {
+                                    }
                                 }
                                 if (os != null) {
-                                    os.close();
+                                    try {
+                                        os.close();
+                                    } catch (IOException e) {
+                                    }
                                 }
                                 // end copy file content to temp file
 
                                 // decrypt the file
-                                File decFile = new File(dataDir, docId+Constants.FILE_EXT_DECRYPTED);
+                                File decFile = new File(dataDir, docId + AppConstants.FILE_EXT_DECRYPTED);
 
                                 client.Dec(tempFile, decFile);
                                 // end decrypt the file
 
                                 // display the file to user
                                 Intent viewIntent = new Intent(Intent.ACTION_VIEW);
-                                viewIntent.setDataAndType(Uri.fromFile(decFile), "text/plain");
+                                if (fileType == Constants.FILE_TYPE_PDF) {
+                                    viewIntent.setDataAndType(Uri.fromFile(decFile), Constants.MIME_TYPE_PDF);
+                                } else if (fileType == Constants.FILE_TYPE_DOC) {
+                                    viewIntent.setDataAndType(Uri.fromFile(decFile), Constants.MIME_TYPE_DOC);
+                                } else {
+                                    viewIntent.setDataAndType(Uri.fromFile(decFile), "text/plain");
+                                }
                                 try {
                                     startActivity(viewIntent);
-                                }catch (Exception ex){
-                                    Log.e(TAG, "unable to open file: "+tempFile.getAbsolutePath());
+                                } catch (Exception ex) {
+                                    Log.e(TAG, "unable to open file: " + tempFile.getAbsolutePath());
                                 }
                                 // end display the file to user
 
@@ -194,10 +212,9 @@ public class SearchFragment extends Fragment {
                             @Override
                             public void onFailure(@NonNull Exception e) {
                                 // Handle failure
-                                Log.e(TAG, "failed to get document from google drive",e);
+                                Log.e(TAG, "failed to get document from google drive", e);
                             }
                         });
-
 
 
 //                if (recExists){
@@ -261,7 +278,6 @@ public class SearchFragment extends Fragment {
         });
 
 
-
         final Gson gson = appSettings.getGson();
 
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -284,12 +300,12 @@ public class SearchFragment extends Fragment {
 //                            .setPositiveButton("OK", null)
 //                            .show();
 //                } else {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                    builder.setTitle("Search result")
-                            .setMessage(msg.what + " documents were found.")
-                            .setCancelable(false)
-                            .setPositiveButton("OK", null)
-                            .show();
+                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                builder.setTitle("Search result")
+                        .setMessage(msg.what + " documents were found.")
+                        .setCancelable(false)
+                        .setPositiveButton("OK", null)
+                        .show();
 //                }
                 arrayAdapter.notifyDataSetChanged();
             }
@@ -299,7 +315,7 @@ public class SearchFragment extends Fragment {
             @Override
             public void onClick(View view) {
 
-                final String sseType = appSettings.getAppPref().getString(Constants.PREF_CLIENT_SSE_TYPE, Constants.PREF_CLIENT_SSE_TYPE_SUISE);
+                final String sseType = appSettings.getAppPref().getString(AppConstants.PREF_CLIENT_SSE_TYPE, AppConstants.PREF_CLIENT_SSE_TYPE_SUISE);
 
                 FormBody.Builder formBodyBuilder = new FormBody.Builder();
                 formBodyBuilder = formBodyBuilder.add("type", sseType);
@@ -307,12 +323,13 @@ public class SearchFragment extends Fragment {
 
                 String token = null;
 
-                if (sseType.equalsIgnoreCase(Constants.PREF_CLIENT_SSE_TYPE_SUISE)){
+                if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
                     token = client.SearchToken(etKeyword.getText().toString()).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
 
                     formBodyBuilder = formBodyBuilder.add("q", token);
+                    formBodyBuilder = formBodyBuilder.add("st", Constants.SSE_TYPE_SUISE + "");
 
-                }else if (sseType.equalsIgnoreCase(Constants.PREF_CLIENT_SSE_TYPE_VASST)){
+                } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
                     String searchStr = etKeyword.getText().toString();
 
                     // TODO: need to think of a method to ensure same x when performing search
@@ -321,7 +338,7 @@ public class SearchFragment extends Fragment {
                     /*
                     // we need to provide the "x" in order to get correct result
                     SQLiteDatabase database = appSettings.getDatabaseHelper().getReadableDatabase();
-                    Cursor c = database.rawQuery("select cx from "+Constants.TABLE_REMOTE_DOCS+" where cremotename=?", new String[]{docId});
+                    Cursor c = database.rawQuery("select cx from "+AppConstants.TABLE_REMOTE_DOCS+" where cremotename=?", new String[]{docId});
 
                     boolean recExists = false;
                     String remoteId = null;
@@ -344,13 +361,15 @@ public class SearchFragment extends Fragment {
                         formBodyBuilder = formBodyBuilder.add("q", encToken);
                     }
 
-                }else{
+                    formBodyBuilder = formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
+
+                } else {
                     throw new UnsupportedOperationException();
                 }
 
                 RequestBody requestBody = formBodyBuilder.build();
 
-                final String url = appSettings.getAppPref().getString(Constants.PREF_SERVER_HOSTNAME, null) + "/search";
+                final String url = appSettings.getAppPref().getString(AppConstants.PREF_SERVER_HOSTNAME, null) + "/search";
 
                 Request request = new Request.Builder()
                         .url(url)

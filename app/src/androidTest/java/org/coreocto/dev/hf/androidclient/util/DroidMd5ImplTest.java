@@ -6,6 +6,7 @@ import android.support.test.runner.AndroidJUnit4;
 import android.util.Base64;
 import android.util.Log;
 import org.apache.commons.lang.RandomStringUtils;
+import org.coreocto.dev.hf.androidclient.crypto.AndroidMd5Impl;
 import org.coreocto.dev.hf.commonlib.crypto.IHashFunc;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,39 +1,27 @@
 package org.coreocto.dev.hf.androidclient.view;
 
 import android.content.Context;
-import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import org.coreocto.dev.hf.androidclient.R;
-import org.coreocto.dev.hf.androidclient.bean.AppSettings;
-import org.coreocto.dev.hf.commonlib.crypto.BlockCipherFactory;
-import org.coreocto.dev.hf.commonlib.util.IBase64;
-import org.coreocto.dev.hf.commonlib.util.Registry;
+import org.coreocto.dev.hf.androidclient.bean.FileInfo;
 
-import javax.crypto.Cipher;
 import java.util.List;
 
-public class SearchResultAdapter extends ArrayAdapter<String> {
+public class SearchResultAdapter extends ArrayAdapter<FileInfo> {
 
-    private Registry registry;
-
-    public SearchResultAdapter(Context context, int textViewResourceId, List<String> items) {
-        super(context, textViewResourceId, items);
-    }
-
-    public SearchResultAdapter(Context context, int textViewResourceId, List<String> items, Registry registry) {
-        super(context, textViewResourceId, items);
-        this.registry = registry;
+    public SearchResultAdapter(Context context, List<FileInfo> items) {
+        super(context, R.layout.search_result_list_item, items);
     }
 
     public View getView(int position, View convertView, ViewGroup parent) {
 
         View view = super.getView(position, convertView, parent);
 
-        String itemTxt = getItem(position);
+        String itemTxt = getItem(position).getName();
 
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.search_result_list_item, parent, false);
