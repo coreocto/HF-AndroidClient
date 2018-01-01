@@ -21,8 +21,6 @@ import android.widget.Button;
 import android.widget.ListView;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.drive.*;
-import com.google.android.gms.drive.events.ChangeEvent;
-import com.google.android.gms.drive.events.OnChangeListener;
 import com.google.android.gms.tasks.*;
 import com.google.gson.Gson;
 import okhttp3.*;
@@ -48,6 +46,7 @@ import org.coreocto.dev.hf.commonlib.Constants;
 import org.coreocto.dev.hf.commonlib.suise.bean.AddTokenResult;
 import org.coreocto.dev.hf.commonlib.vasst.bean.TermFreq;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -67,6 +66,7 @@ public class UploadFragment extends Fragment {
     private Button bProcessQueue = null;
     private UploadItemArrayAdapter arrayAdapter = null;
     private List<UploadItem> processList = null;
+    private Button bLoadFiles = null;
 //    private GoogleApiClient mGoogleApiClient = null;
 
     public UploadFragment() {
@@ -80,10 +80,14 @@ public class UploadFragment extends Fragment {
      * @return A new instance of fragment AddFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static AddFragment newInstance() {
-        AddFragment fragment = new AddFragment();
-        return fragment;
+    public static UploadFragment newInstance() {
+        if (instance == null) {
+            instance = new UploadFragment();
+        }
+        return instance;
     }
+
+    private static UploadFragment instance = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -102,6 +106,7 @@ public class UploadFragment extends Fragment {
         lvProcessQueue = (ListView) view.findViewById(R.id.lvUploadFileList);
         bAddFile = (Button) view.findViewById(R.id.bAddFile);
         bProcessQueue = (Button) view.findViewById(R.id.bProcessQueue);
+        bLoadFiles = (Button) view.findViewById(R.id.bLoadFiles);
 
         final Context ctx = getActivity();
         final Activity activity = getActivity();
@@ -121,6 +126,41 @@ public class UploadFragment extends Fragment {
         final Gson gson = appSettings.getGson();
 
         final DatabaseHelper databaseHelper = appSettings.getDatabaseHelper();
+
+        bLoadFiles.setOnClickListener(new View.OnClickListener() {
+
+            private boolean done = true;
+
+            @Override
+            public void onClick(View v) {
+                if (done) {
+                    final File extStor = Environment.getExternalStorageDirectory();
+                    final File tspDir = new File(extStor, "TSP");
+                    done = false;
+                    execService.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            File[] files = tspDir.listFiles();
+                            for (File file : files) {
+                                UploadItem newItem = new UploadItem();
+                                newItem.setUri(Uri.fromFile(file));
+                                newItem.setStatus(UploadItem.Status.PENDING);
+                                processList.add(newItem);
+                            }
+
+                            activity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    arrayAdapter.notifyDataSetChanged();
+                                }
+                            });
+
+                            done = true;
+                        }
+                    });
+                }
+            }
+        });
 
         bProcessQueue.setOnClickListener(new View.OnClickListener() {
 
@@ -187,11 +227,16 @@ public class UploadFragment extends Fragment {
 
             private long getFileSize(Uri docUri) {
                 long result = -1;
-                Cursor returnCursor = ctx.getContentResolver().query(docUri, null, null, null, null);
-                int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
-                returnCursor.moveToFirst();
-                result = returnCursor.getLong(sizeIndex);
-                returnCursor.close();
+                if (docUri.getScheme() != null && docUri.getScheme().startsWith("content")) {
+                    Cursor returnCursor = ctx.getContentResolver().query(docUri, null, null, null, null);
+                    int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
+                    returnCursor.moveToFirst();
+                    result = returnCursor.getLong(sizeIndex);
+                    returnCursor.close();
+                } else if (docUri.getScheme() != null && docUri.getScheme().startsWith("file")) {
+                    File fileRef = new File(docUri.getPath());
+                    result = fileRef.length();
+                }
                 return result;
             }
 
@@ -249,30 +294,37 @@ public class UploadFragment extends Fragment {
                                 return mDriveResourceClient.createFile(parent, changeSet, contents);
                             }
                         }).addOnSuccessListener(activity, new OnSuccessListener<DriveFile>() {
-                    @Override
-                    public void onSuccess(DriveFile driveFile) {
-                        Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
-
-                        mDriveResourceClient.addChangeListener(driveFile, new OnChangeListener() {
-
-                            /**
-                             * A listener to handle file change events.
-                             */
                             @Override
-                            public void onChange(ChangeEvent changeEvent) {
-                                Log.d(TAG, "docId: " + docId);
-                                Log.d(TAG, "onChange(), " + changeEvent.getDriveId() + ", resourceId: " + changeEvent.getDriveId().getResourceId());
+                            public void onSuccess(final DriveFile driveFile) {
+                                Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
 
-                                {
-                                    ContentValues values = new ContentValues();
-                                    values.put("cremoteid", changeEvent.getDriveId().encodeToString());
-                                    long affectedRows = databaseHelper.getWritableDatabase().update(AppConstants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
-                                    Log.d(TAG, "affectedRows(update): " + affectedRows);
-                                }
+//                                mDriveResourceClient.addChangeListener(driveFile, new OnChangeListener() {
+//
+//                                    /**
+//                                     * A listener to handle file change events.
+//                                     */
+//                                    @Override
+//                                    public void onChange(ChangeEvent changeEvent) {
+//                                        Log.d(TAG, "docId: " + docId);
+//                                        Log.d(TAG, "onChange(), " + changeEvent.getDriveId() + ", resourceId: " + changeEvent.getDriveId().getResourceId());
+//
+//                                        {
+//                                            ContentValues values = new ContentValues();
+//                                            values.put("cremoteid", changeEvent.getDriveId().encodeToString());
+//                                            long affectedRows = databaseHelper.getWritableDatabase().update(AppConstants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
+//                                            Log.d(TAG, "affectedRows(update): " + affectedRows);
+//                                        }
+//                                    }
+//                                });
+
+                                mDriveResourceClient.addChangeSubscription(driveFile).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Log.d(TAG, "subscribed");
+                                    }
+                                });
                             }
-                        });
-                    }
-                })
+                        })
                         .addOnFailureListener(activity, new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {

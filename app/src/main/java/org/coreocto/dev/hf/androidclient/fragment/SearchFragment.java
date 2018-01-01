@@ -43,13 +43,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-//import com.android.volley.Request;
-//import com.android.volley.RequestQueue;
-//import com.android.volley.Response;
-//import com.android.volley.VolleyError;
-//import com.android.volley.toolbox.StringRequest;
-//import com.android.volley.toolbox.Volley;
-
 /**
  * A simple {@link Fragment} subclass.
  * Activities that contain this fragment must implement the
@@ -125,10 +118,23 @@ public class SearchFragment extends Fragment {
                 String remoteId = null;
 
                 while (c.moveToNext()) {
+                    recExists = true;
                     remoteId = c.getString(c.getColumnIndex("cremoteid"));
                 }
 
                 c.close();
+                database.close();
+
+                //TODO: if the upload process does not complete, this remoteId could be null.
+                if (remoteId == null && recExists){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+                    builder.setTitle("Error")
+                            .setMessage("Your file is not yet ready on Google Drive.\nPlease try again later.")
+                            .setCancelable(false)
+                            .setPositiveButton("OK", null)
+                            .show();
+                    return;
+                }
 
                 Log.d(TAG, "remoteId: " + remoteId);
 
