@@ -16,13 +16,19 @@
         <Button
                 android:id="@+id/bAddFile"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="140dp"
                 android:layout_weight="1"
                 android:text="Add File"/>
         <Button
+                android:id="@+id/bLoadFiles"
+                android:layout_width="match_parent"
+                android:layout_height="140dp"
+                android:layout_weight="1"
+                android:text="Load from Default Folder"/>
+        <Button
                 android:id="@+id/bProcessQueue"
                 android:layout_width="match_parent"
-                android:layout_height="120dp"
+                android:layout_height="140dp"
                 android:layout_weight="1"
                 android:text="Process Queue"/>
     </LinearLayout>

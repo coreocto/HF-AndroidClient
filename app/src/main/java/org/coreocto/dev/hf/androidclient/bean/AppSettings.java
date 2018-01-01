@@ -1,8 +1,8 @@
 package org.coreocto.dev.hf.androidclient.bean;
 
 import android.content.SharedPreferences;
+import com.google.android.gms.drive.DriveResourceClient;
 import com.google.gson.Gson;
-import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
 import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
@@ -17,6 +17,16 @@ public class AppSettings {
     private Registry registry;
     private VasstClient vasstClient;
     private DatabaseHelper databaseHelper;
+
+    public DriveResourceClient getDriveResourceClient() {
+        return driveResourceClient;
+    }
+
+    public void setDriveResourceClient(DriveResourceClient driveResourceClient) {
+        this.driveResourceClient = driveResourceClient;
+    }
+
+    private DriveResourceClient driveResourceClient;
 
     public static AppSettings getInstance() {
         if (instance == null) {
