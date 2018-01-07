@@ -41,11 +41,12 @@ import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItem;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemFragment;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemRecyclerViewAdapter;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
-import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
-import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
-import org.coreocto.dev.hf.commonlib.suise.util.SuiseUtil;
+import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
+import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
+import org.coreocto.dev.hf.commonlib.sse.suise.util.SuiseUtil;
 import org.coreocto.dev.hf.commonlib.util.ILogger;
 import org.coreocto.dev.hf.commonlib.util.Registry;
+import org.coreocto.dev.hf.perfmon.aspect.TraceAspect;
 
 import java.util.List;
 
@@ -233,6 +234,10 @@ public class NavDwrActivity extends AppCompatActivity
         String key1 = appPref.getString(AppConstants.PREF_CLIENT_KEY1, null);
         String key2 = appPref.getString(AppConstants.PREF_CLIENT_KEY2, null);
 
+        boolean statEnabled = appPref.getBoolean(AppConstants.PREF_SERVER_RPT_STAT, true);
+
+        TraceAspect.setEnabled(statEnabled);
+
         ILogger debugLogger = new ILogger() {
             @Override
             public void log(String s, String s1) {
@@ -251,25 +256,27 @@ public class NavDwrActivity extends AppCompatActivity
 //        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new NativeAes128CbcImpl());    //there are memory leak problem when using the native aes impl, i will fix it later
 
         if ((key1 == null || key1.isEmpty()) && (key2 == null || key2.isEmpty())) {
-            appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil));
-            appSettings.setVasstClient(new VasstClient(registry));
+            appSettings.setSuiseClient(new SuiseClientW(registry, suiseUtil));
+            appSettings.setVasstClient(new VasstClientW(registry));
         } else {
-
             byte[] key1Bytes = registry.getBase64().decodeToByteArray(key1);
             byte[] key2Bytes = registry.getBase64().decodeToByteArray(key2);
 
-            appSettings.setSuiseClient(new SuiseClient(registry, suiseUtil, key1Bytes, key2Bytes, null, null));
+            SuiseClientW suiseClient = new SuiseClientW(registry, suiseUtil);
+            suiseClient.setKey1(key1Bytes);
+            suiseClient.setKey2(key2Bytes);
+            appSettings.setSuiseClient(suiseClient);
 
-            VasstClient vasstClient = new VasstClient(registry);
+            VasstClientW vasstClient = new VasstClientW(registry);
             vasstClient.setSecretKey(key1Bytes);
             appSettings.setVasstClient(vasstClient);
         }
         //end
 
-        byte[] defaultIv = new byte[16];
-        appSettings.getSuiseClient().setIv1(defaultIv);
-        appSettings.getSuiseClient().setIv2(defaultIv);
-        appSettings.getVasstClient().setIv(defaultIv);
+//        byte[] defaultIv = new byte[16];
+//        appSettings.getSuiseClient().setIv1(defaultIv);
+//        appSettings.getSuiseClient().setIv2(defaultIv);
+//        appSettings.getVasstClient().setIv(defaultIv);
 
         DatabaseHelper databaseHelper = new DatabaseHelper(this, AppConstants.LOCAL_APP_DB, null, 1);
         appSettings.setDatabaseHelper(databaseHelper);

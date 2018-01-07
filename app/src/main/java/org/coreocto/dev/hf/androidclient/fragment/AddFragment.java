@@ -40,10 +40,10 @@ import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
 import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
 import org.coreocto.dev.hf.clientlib.parser.IFileParser;
 import org.coreocto.dev.hf.clientlib.parser.TxtFileParserImpl;
-import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
-import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
-import org.coreocto.dev.hf.commonlib.suise.bean.AddTokenResult;
-import org.coreocto.dev.hf.commonlib.vasst.bean.TermFreq;
+import org.coreocto.dev.hf.clientlib.sse.suise.SuiseClient;
+import org.coreocto.dev.hf.clientlib.sse.vasst.VasstClient;
+import org.coreocto.dev.hf.commonlib.sse.suise.bean.AddTokenResult;
+import org.coreocto.dev.hf.commonlib.sse.vasst.bean.TermFreq;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,6 +63,7 @@ import java.util.concurrent.Executors;
  * Use the {@link AddFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+@Deprecated
 public class AddFragment extends Fragment {
 
     public static final ExecutorService execService = Executors.newSingleThreadExecutor();
@@ -219,7 +220,7 @@ public class AddFragment extends Fragment {
                                 try {
                                     inputStream = new FileInputStream(srcFile);
 
-                                    suiseClient.Enc(inputStream, outputStream);
+                                    suiseClient.Enc(inputStream, outputStream, null);
 
                                 } catch (Exception e1) {
                                     Log.e(TAG, "Unable to write file contents.");
@@ -407,7 +408,7 @@ public class AddFragment extends Fragment {
                                                 adStopWatch.start();
 
                                                 // the token file
-                                                AddTokenResult addTokenResult = client.AddToken(srcFile, false, docId, fileParser);
+                                                AddTokenResult addTokenResult = client.AddToken(srcFile, false, docId, fileParser, null);
 
                                                 adStopWatch.stop();
                                                 adStopWatch.setName(addTokenResult.getId());
@@ -446,7 +447,7 @@ public class AddFragment extends Fragment {
                                                 final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
                                                 adStopWatch.start();
 
-                                                TermFreq termFreq = vasstClient.Preprocessing(srcFile, x, fileParser);
+                                                TermFreq termFreq = vasstClient.Preprocessing(srcFile, x, fileParser, null);
 
                                                 adStopWatch.stop();
                                                 adStopWatch.setName(docId);

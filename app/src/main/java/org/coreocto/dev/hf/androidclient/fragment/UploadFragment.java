@@ -30,34 +30,38 @@ import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.activity.NavDwrActivity;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.bean.UploadItem;
-import org.coreocto.dev.hf.androidclient.benchmark.AddTokenStopWatch;
-import org.coreocto.dev.hf.androidclient.benchmark.DocEncryptStopWatch;
-import org.coreocto.dev.hf.androidclient.benchmark.IndexUploadStopWatch;
+import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5BcImpl;
+import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5FcImpl;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.androidclient.parser.DocFileParserImpl;
 import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
+import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
 import org.coreocto.dev.hf.androidclient.view.UploadItemArrayAdapter;
+import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
+import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
 import org.coreocto.dev.hf.clientlib.parser.IFileParser;
 import org.coreocto.dev.hf.clientlib.parser.TxtFileParserImpl;
-import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
-import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
+import org.coreocto.dev.hf.clientlib.sse.suise.SuiseClient;
+import org.coreocto.dev.hf.clientlib.sse.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.Constants;
-import org.coreocto.dev.hf.commonlib.suise.bean.AddTokenResult;
-import org.coreocto.dev.hf.commonlib.vasst.bean.TermFreq;
+import org.coreocto.dev.hf.commonlib.crypto.IByteCipher;
+import org.coreocto.dev.hf.commonlib.crypto.IFileCipher;
+import org.coreocto.dev.hf.commonlib.sse.suise.bean.AddTokenResult;
+import org.coreocto.dev.hf.commonlib.sse.vasst.bean.TermFreq;
+import org.coreocto.dev.hf.commonlib.util.IBase64;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.security.SecureRandom;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class UploadFragment extends Fragment {
-    public static final ExecutorService execService = Executors.newSingleThreadExecutor();
+    private static final ExecutorService execService = Executors.newSingleThreadExecutor();
     private static final String TAG = "UploadFragment";
 
     private AddFragment.OnFragmentInteractionListener mListener = null;
@@ -67,7 +71,6 @@ public class UploadFragment extends Fragment {
     private UploadItemArrayAdapter arrayAdapter = null;
     private List<UploadItem> processList = null;
     private Button bLoadFiles = null;
-//    private GoogleApiClient mGoogleApiClient = null;
 
     public UploadFragment() {
         // Required empty public constructor
@@ -181,7 +184,7 @@ public class UploadFragment extends Fragment {
 
                         int max = progressDialog.getMax();
                         Log.d(TAG, "msg.what = " + msg.what);
-//                    Log.d(TAG, "progressDialog.max = " + max);
+                        //Log.d(TAG, "progressDialog.max = " + max);
                         if (msg.what + 1 >= max) {
                             progressDialog.dismiss();// 关闭ProgressDialog
                         } else {
@@ -194,36 +197,36 @@ public class UploadFragment extends Fragment {
 
             private OkHttpClient httpClient = new OkHttpClient();
 
-            private void pushStat(Object obj, String type) {
+//            private void pushStat(Object obj, String type) {
 
-                final String statUrl = appSettings.getAppPref().getString(AppConstants.PREF_SERVER_HOSTNAME, null) + "/" + AppConstants.REQ_STAT_URL;
-
-                RequestBody requestBody = new FormBody.Builder()
-                        .add("data", gson.toJson(obj))
-                        .add("type", type).build();
-
-                Request request = new Request.Builder()
-                        .url(statUrl)
-                        .post(requestBody)
-                        .build();
-
-                httpClient.newCall(request).enqueue(new Callback() {
-                    @Override
-                    public void onFailure(Call call, IOException e) {
-                        Log.e(TAG, "error when pushing statistics to server");
-                    }
-
-                    @Override
-                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
-                        if (!response.isSuccessful()) {
-                            // Handle the error
-                            Log.e(TAG, "response.isSuccessful() = false");
-                        }
-
-                        response.close();
-                    }
-                });
-            }
+//                final String statUrl = appSettings.getAppPref().getString(AppConstants.PREF_SERVER_HOSTNAME, null) + "/" + AppConstants.REQ_STAT_URL;
+//
+//                RequestBody requestBody = new FormBody.Builder()
+//                        .add("data", gson.toJson(obj))
+//                        .add("type", type).build();
+//
+//                Request request = new Request.Builder()
+//                        .url(statUrl)
+//                        .post(requestBody)
+//                        .build();
+//
+//                httpClient.newCall(request).enqueue(new Callback() {
+//                    @Override
+//                    public void onFailure(Call call, IOException e) {
+//                        Log.e(TAG, "error when pushing statistics to server");
+//                    }
+//
+//                    @Override
+//                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
+//                        if (!response.isSuccessful()) {
+//                            // Handle the error
+//                            Log.e(TAG, "response.isSuccessful() = false");
+//                        }
+//
+//                        response.close();
+//                    }
+//                });
+//            }
 
             private long getFileSize(Uri docUri) {
                 long result = -1;
@@ -240,7 +243,7 @@ public class UploadFragment extends Fragment {
                 return result;
             }
 
-            private void saveEncFileToDrive(final Uri docUri, final String docId, final SuiseClient suiseClient, final boolean enableStatRpt) {
+            private void saveEncFileToDrive(final Uri docUri, final String docId, final Object sseClient, final boolean enableStatRpt, final byte[] randomIv) {
 
                 final Task<DriveFolder> rootFolderTask = mDriveResourceClient.getRootFolder();
                 final Task<DriveContents> createContentsTask = mDriveResourceClient.createContents();
@@ -253,24 +256,38 @@ public class UploadFragment extends Fragment {
                                 DriveContents contents = createContentsTask.getResult();
                                 OutputStream outputStream = contents.getOutputStream();
 
-                                final DocEncryptStopWatch encStopWatch = new DocEncryptStopWatch(docId, getFileSize(docUri));
-                                encStopWatch.start();
+//                                final DocEncryptStopWatch encStopWatch = new DocEncryptStopWatch(docId, getFileSize(docUri));
+//                                encStopWatch.start();
+
+                                long curFileSz = getFileSize(docUri);
+
+                                Map<String, String> addInfo = new HashMap<>();
+                                addInfo.put("fileSize", curFileSz + "");
+                                addInfo.put("name", docId);
 
                                 InputStream inputStream = null;
                                 try {
                                     inputStream = ctx.getContentResolver().openInputStream(docUri);
 
-                                    suiseClient.Enc(inputStream, outputStream);
+                                    if (sseClient instanceof SuiseClient) {
+                                        SuiseClientW suiseClientW = (SuiseClientW) sseClient;
+                                        IFileCipher fileCipher = new AesCbcPkcs5FcImpl(suiseClientW.getKey2(), randomIv);
+                                        suiseClientW.Enc(inputStream, outputStream, fileCipher, addInfo);
+                                    } else if (sseClient instanceof VasstClient) {
+                                        VasstClientW vasstClientW = (VasstClientW) sseClient;
+                                        IFileCipher fileCipher = new AesCbcPkcs5FcImpl(vasstClientW.getSecretKey(), randomIv);
+                                        vasstClientW.Encrypt(inputStream, outputStream, fileCipher, addInfo);
+                                    }
 
                                 } catch (Exception e1) {
                                     Log.e(TAG, "Unable to write file contents.");
                                 }
 
-                                encStopWatch.stop();
-
-                                if (enableStatRpt) {
-                                    pushStat(encStopWatch, AppConstants.SW_TYPE_ENCRYPT);
-                                }
+//                                encStopWatch.stop();
+//
+//                                if (enableStatRpt) {
+//                                    pushStat(encStopWatch, AppConstants.SW_TYPE_ENCRYPT);
+//                                }
 
                                 if (inputStream != null) {
                                     try {
@@ -294,9 +311,9 @@ public class UploadFragment extends Fragment {
                                 return mDriveResourceClient.createFile(parent, changeSet, contents);
                             }
                         }).addOnSuccessListener(activity, new OnSuccessListener<DriveFile>() {
-                            @Override
-                            public void onSuccess(final DriveFile driveFile) {
-                                Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
+                    @Override
+                    public void onSuccess(final DriveFile driveFile) {
+                        Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
 
 //                                mDriveResourceClient.addChangeListener(driveFile, new OnChangeListener() {
 //
@@ -317,14 +334,14 @@ public class UploadFragment extends Fragment {
 //                                    }
 //                                });
 
-                                mDriveResourceClient.addChangeSubscription(driveFile).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                    @Override
-                                    public void onSuccess(Void aVoid) {
-                                        Log.d(TAG, "subscribed");
-                                    }
-                                });
+                        mDriveResourceClient.addChangeSubscription(driveFile).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Log.d(TAG, "subscribed");
                             }
-                        })
+                        });
+                    }
+                })
                         .addOnFailureListener(activity, new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
@@ -362,8 +379,8 @@ public class UploadFragment extends Fragment {
                 //moved variable into instance variable so that every method can access directly
                 //final OkHttpClient httpClient = new OkHttpClient();
 
-                final SuiseClient client = appSettings.getSuiseClient();
-                final VasstClient vasstClient = appSettings.getVasstClient();
+                final SuiseClientW client = appSettings.getSuiseClient();
+                final VasstClientW vasstClient = appSettings.getVasstClient();
 
                 final String extStore = Environment.getExternalStorageDirectory().toString();
 
@@ -385,12 +402,17 @@ public class UploadFragment extends Fragment {
                                 boolean pingOk = true;
 
                                 //add service check to server application before doing anything
+                                Response httpResponse = null;
                                 try {
                                     Request pingRequest = new Request.Builder().url(pingUrl).build();
-                                    httpClient.newCall(pingRequest).execute();
+                                    httpResponse = httpClient.newCall(pingRequest).execute();
                                 } catch (IOException ex) {
                                     Log.e(TAG, "error when ping web server", ex);
                                     pingOk = false;
+                                } finally {
+                                    if (httpResponse != null) {
+                                        httpResponse.close();
+                                    }
                                 }
 
                                 if (!pingOk) {
@@ -399,6 +421,11 @@ public class UploadFragment extends Fragment {
                                 }
                                 //end of service check
 
+
+                                byte[] randomIvForFC = new byte[16];
+                                SecureRandom secureRandom = new SecureRandom();
+
+                                IBase64 base64 = new AndroidBase64Impl();
 
                                 for (int i = 0; i < max; i++) {
 
@@ -444,28 +471,44 @@ public class UploadFragment extends Fragment {
                                             //final DocEncryptStopWatch encStopWatch = new DocEncryptStopWatch(docId, srcFile.length());
                                             //encStopWatch.start();
 
-                                            saveEncFileToDrive(docUri, docId, client, enableStatRpt);
+                                            secureRandom.nextBytes(randomIvForFC);
+
+                                            if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
+                                                saveEncFileToDrive(docUri, docId, client, enableStatRpt, randomIvForFC);
+                                            } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
+                                                saveEncFileToDrive(docUri, docId, vasstClient, enableStatRpt, randomIvForFC);
+                                            }
+
+                                            formBodyBuilder.add("feiv", base64.encodeToString(randomIvForFC));
+
+                                            Map<String, String> addInfo = new HashMap<>();
+                                            addInfo.put("name", docId);
 
                                             if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
 
                                                 formBodyBuilder.add("st", Constants.SSE_TYPE_SUISE + "");
 
                                                 // begin of create search token
-                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
-                                                adStopWatch.start();
+//                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
+//                                                adStopWatch.start();
+
+                                                byte[] iv = new byte[16];
+//                                                new SecureRandom().nextBytes(iv);
+
+                                                IByteCipher byteCipher = new AesCbcPkcs5BcImpl(client.getKey1(), iv);
 
                                                 // the token file
-                                                AddTokenResult addTokenResult = client.AddToken(ctx.getContentResolver().openInputStream(docUri), false, docId, fileParser);
+                                                AddTokenResult addTokenResult = client.AddToken(ctx.getContentResolver().openInputStream(docUri), false, docId, fileParser, byteCipher, addInfo);
 
-                                                adStopWatch.stop();
-                                                adStopWatch.setName(addTokenResult.getId());
-                                                adStopWatch.setWordCount(addTokenResult.getC().size());
+//                                                adStopWatch.stop();
+//                                                adStopWatch.setName(addTokenResult.getId());
+//                                                adStopWatch.setWordCount(addTokenResult.getC().size());
 
                                                 //docId = addTokenResult.getId();
 
-                                                if (enableStatRpt) {
-                                                    pushStat(adStopWatch, AppConstants.SW_TYPE_ADD_TOKEN);
-                                                }
+//                                                if (enableStatRpt) {
+//                                                    pushStat(adStopWatch, AppConstants.SW_TYPE_ADD_TOKEN);
+//                                                }
                                                 // end of create search token
 
 //                                            Log.d(TAG, "adStopWatch = " + adStopWatch.toString());
@@ -477,6 +520,7 @@ public class UploadFragment extends Fragment {
 
                                                 formBodyBuilder = formBodyBuilder.add("token", token);
                                                 formBodyBuilder = formBodyBuilder.add("docId", docId);
+                                                formBodyBuilder = formBodyBuilder.add("weiv", base64.encodeToString(iv));
                                             } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
 
                                                 formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
@@ -493,23 +537,28 @@ public class UploadFragment extends Fragment {
                                                     Log.d(TAG, "affectedRows(update): " + affectedRows);
                                                 }
 
-                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
-                                                adStopWatch.start();
+//                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
+//                                                adStopWatch.start();
 
-                                                TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x, fileParser);
+                                                byte[] iv = new byte[16];
+                                                IByteCipher byteCipher = new AesCbcPkcs5BcImpl(vasstClient.getSecretKey(), iv);
 
-                                                adStopWatch.stop();
-                                                adStopWatch.setName(docId);
-                                                adStopWatch.setWordCount(termFreq.getTerms().size());   //this is not the actual size, will modify it later
+                                                TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x, fileParser, byteCipher, addInfo);
+
+//                                                adStopWatch.stop();
+//                                                adStopWatch.setName(docId);
+//                                                adStopWatch.setWordCount(termFreq.getTerms().size());   //this is not the actual size, will modify it later
 
                                                 String terms = gson.toJson(termFreq);
 
                                                 formBodyBuilder = formBodyBuilder.add("terms", terms);
                                                 formBodyBuilder = formBodyBuilder.add("docId", docId);
+                                                formBodyBuilder = formBodyBuilder.add("weiv", base64.encodeToString(iv));
                                             }
 
                                         } catch (Exception e) {
                                             Log.e(TAG, "error when performing cycle", e);
+                                            throw e;
                                         }
 
                                         RequestBody requestBody = formBodyBuilder.build();
@@ -519,12 +568,12 @@ public class UploadFragment extends Fragment {
                                                 .post(requestBody)
                                                 .build();
 
-                                        final IndexUploadStopWatch uploadStopWatch = new IndexUploadStopWatch(docId, 0);
+//                                        final IndexUploadStopWatch uploadStopWatch = new IndexUploadStopWatch(docId, 0);
 
                                         httpClient.newCall(request).enqueue(new Callback() {
                                             @Override
                                             public void onFailure(Call call, IOException e) {
-                                                uploadStopWatch.stop();
+//                                                uploadStopWatch.stop();
                                             }
 
                                             @Override
@@ -536,17 +585,17 @@ public class UploadFragment extends Fragment {
                                                     Log.i(TAG, "http request ok");
                                                 }
 
-                                                uploadStopWatch.stop();
+//                                                uploadStopWatch.stop();
 
-                                                if (enableStatRpt) {
-                                                    pushStat(uploadStopWatch, "encrypt");
-                                                }
+                                                response.body().close();
 
-                                                response.close();
+//                                                if (enableStatRpt) {
+//                                                    pushStat(uploadStopWatch, "encrypt");
+//                                                }
                                             }
                                         });
 
-                                        uploadStopWatch.start();
+//                                        uploadStopWatch.start();
 
                                         dismissDialogHandler.sendEmptyMessage(i);
 
@@ -558,7 +607,6 @@ public class UploadFragment extends Fragment {
 
                                     } finally {
                                         activity.runOnUiThread(new Runnable() {
-
                                             @Override
                                             public void run() {
                                                 arrayAdapter.notifyDataSetChanged();
@@ -567,6 +615,9 @@ public class UploadFragment extends Fragment {
                                     }
 
                                 }
+
+                                //if the code above throw exception, the dialog would not close. so we force close it here
+                                progressDialog.dismiss();
 
                             }
                         }
@@ -589,12 +640,13 @@ public class UploadFragment extends Fragment {
     private static final int READ_REQUEST_CODE = 42;
 
     private static final String[] mimeTypes =
-            {"application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .doc & .docx
-                    "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .ppt & .pptx
-                    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xls & .xlsx
+            {"application/msword", //"application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .doc & .docx
+                    //"application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .ppt & .pptx
+                    //"application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xls & .xlsx
                     "text/plain",
-                    "application/pdf",
-                    "application/zip"};
+                    "application/pdf"
+                    //"application/zip"
+            };
 
     public void performFileSelection() {
 

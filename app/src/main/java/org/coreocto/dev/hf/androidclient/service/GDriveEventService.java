@@ -28,7 +28,7 @@ public class GDriveEventService extends DriveEventService {
 
     @Override
     public void onCreate() {
-        Log.d(TAG, "onCreate()");
+        Log.d(TAG, this.getClass().getName() + ".onCreate()");
         super.onCreate();
         mExecutorService = Executors.newSingleThreadExecutor();
     }

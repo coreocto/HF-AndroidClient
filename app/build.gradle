@@ -1,17 +1,27 @@
-apply plugin: 'com.android.application'
+import org.aspectj.bridge.IMessage
+import org.aspectj.bridge.MessageHandler
+import org.aspectj.tools.ajc.Main
 
 buildscript {
     repositories {
         mavenCentral()
     }
-
     dependencies {
-        classpath 'com.jakewharton.hugo:hugo-plugin:1.2.1'
+        classpath 'org.aspectj:aspectjtools:1.8.1'
         classpath 'com.itextpdf:itextg:5.5.10'
     }
 }
 
-apply plugin: 'com.jakewharton.hugo'
+apply plugin: 'com.android.application'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':perfmon')
+    compile 'org.aspectj:aspectjrt:1.8.1'
+}
 
 android {
     signingConfigs {
@@ -84,7 +94,7 @@ dependencies {
     compile 'com.google.android.gms:play-services-auth:11.6.0'
     compile 'com.google.android.gms:play-services-drive:11.6.0'
     //compile 'com.google.android.gms:play-services:11.6.0'
-    compile 'com.github.coreocto:HF-ClientLib:ac47484'
+    compile 'com.github.coreocto:HF-ClientLib:a6810d0'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
     compile 'com.itextpdf:itextg:5.5.10'
     // https://mvnrepository.com/artifact/commons-io/commons-io
@@ -99,6 +109,49 @@ dependencies {
     // compile group: 'org.textmining', name: 'tm-extractors', version: '0.4'
     // DO NOT include tm-extractors here, it adds an additional dependency poi 2.5.1 which causes duplicate class error
     // Workaround: download the jar and put it into libs directory
+}
+
+final def log = project.logger
+final def variants = project.android.applicationVariants
+
+variants.all { variant ->
+    if (!variant.buildType.isDebuggable()) {
+        log.debug("Skipping non-debuggable build type '${variant.buildType.name}'.")
+        return;
+    }
+
+    JavaCompile javaCompile = variant.javaCompile
+    javaCompile.doLast {
+        String[] args = ["-showWeaveInfo",
+                         "-1.5",
+                         "-inpath", javaCompile.destinationDir.toString(),
+                         "-aspectpath", javaCompile.classpath.asPath,
+                         "-d", javaCompile.destinationDir.toString(),
+                         "-classpath", javaCompile.classpath.asPath,
+                         "-bootclasspath", project.android.bootClasspath.join(File.pathSeparator)]
+        log.debug "ajc args: " + Arrays.toString(args)
+
+        MessageHandler handler = new MessageHandler(true);
+        new Main().run(args, handler);
+        for (IMessage message : handler.getMessages(null, true)) {
+            switch (message.getKind()) {
+                case IMessage.ABORT:
+                case IMessage.ERROR:
+                case IMessage.FAIL:
+                    log.error message.message, message.thrown
+                    break;
+                case IMessage.WARNING:
+                    log.warn message.message, message.thrown
+                    break;
+                case IMessage.INFO:
+                    log.info message.message, message.thrown
+                    break;
+                case IMessage.DEBUG:
+                    log.debug message.message, message.thrown
+                    break;
+            }
+        }
+    }
 }
 
 //do not move it to top

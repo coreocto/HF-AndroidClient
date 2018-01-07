@@ -1,32 +1,21 @@
 package org.coreocto.dev.hf.androidclient.bean;
 
 import android.content.SharedPreferences;
-import com.google.android.gms.drive.DriveResourceClient;
 import com.google.gson.Gson;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
-import org.coreocto.dev.hf.clientlib.suise.SuiseClient;
-import org.coreocto.dev.hf.clientlib.vasst.VasstClient;
+import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
+import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
 public class AppSettings {
 
     private static AppSettings instance;
-    private SuiseClient suiseClient;
+    private SuiseClientW suiseClient;
     private SharedPreferences appPref;
     private Gson gson;
     private Registry registry;
-    private VasstClient vasstClient;
+    private VasstClientW vasstClient;
     private DatabaseHelper databaseHelper;
-
-    public DriveResourceClient getDriveResourceClient() {
-        return driveResourceClient;
-    }
-
-    public void setDriveResourceClient(DriveResourceClient driveResourceClient) {
-        this.driveResourceClient = driveResourceClient;
-    }
-
-    private DriveResourceClient driveResourceClient;
 
     public static AppSettings getInstance() {
         if (instance == null) {
@@ -35,11 +24,11 @@ public class AppSettings {
         return instance;
     }
 
-    public VasstClient getVasstClient() {
+    public VasstClientW getVasstClient() {
         return vasstClient;
     }
 
-    public void setVasstClient(VasstClient vasstClient) {
+    public void setVasstClient(VasstClientW vasstClient) {
         this.vasstClient = vasstClient;
     }
 
@@ -75,11 +64,11 @@ public class AppSettings {
         this.appPref = appPref;
     }
 
-    public SuiseClient getSuiseClient() {
+    public SuiseClientW getSuiseClient() {
         return suiseClient;
     }
 
-    public void setSuiseClient(SuiseClient suiseClient) {
+    public void setSuiseClient(SuiseClientW suiseClient) {
         this.suiseClient = suiseClient;
     }
 }

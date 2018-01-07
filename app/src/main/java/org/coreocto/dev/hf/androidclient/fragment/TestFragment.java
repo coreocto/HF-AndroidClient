@@ -16,7 +16,6 @@ import com.google.android.gms.drive.DriveFolder;
 import com.google.android.gms.drive.DriveId;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
-import hugo.weaving.DebugLog;
 import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
@@ -111,7 +110,6 @@ public class TestFragment extends Fragment {
             public void onClick(View v) {
                 try {
                     new Thread(new Runnable() {
-                        @DebugLog
                         @Override
                         public void run() {
                             try {

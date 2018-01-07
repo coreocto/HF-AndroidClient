@@ -3,6 +3,15 @@ package org.coreocto.dev.hf.androidclient.bean;
 public class FileInfo {
     public String name;
     public int type;
+    private String feiv;
+
+    public String getFeiv() {
+        return feiv;
+    }
+
+    public void setFeiv(String feiv) {
+        this.feiv = feiv;
+    }
 
     public String getName() {
         return name;

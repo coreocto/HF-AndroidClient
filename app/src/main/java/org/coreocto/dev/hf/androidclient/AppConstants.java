@@ -22,6 +22,7 @@ public class AppConstants {
     public static final String SW_TYPE_ENCRYPT = "encrypt";
 
     public static final int ERR_CANNOT_CONNECT_SERVER = -100;
+    public static final int ERR_GOOGLE_DRIVE_FILE_NOT_READY = -101;
 
     //preference item for crypto test
     public static final String PREF_CT_DEFAULT_RUN_CNT = "1";
