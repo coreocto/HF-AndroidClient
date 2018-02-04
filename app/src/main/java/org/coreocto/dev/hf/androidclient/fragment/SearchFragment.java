@@ -36,15 +36,18 @@ import org.coreocto.dev.hf.androidclient.bean.SearchResponse;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5BcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5FcImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
+import org.coreocto.dev.hf.androidclient.view.AutoCompleteAdapter;
 import org.coreocto.dev.hf.androidclient.view.SearchResultAdapter;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
+import org.coreocto.dev.hf.clientlib.sse.chlh.Chlh2Client;
 import org.coreocto.dev.hf.commonlib.Constants;
 import org.coreocto.dev.hf.commonlib.crypto.IByteCipher;
 import org.coreocto.dev.hf.commonlib.crypto.IFileCipher;
 import org.coreocto.dev.hf.commonlib.util.IBase64;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +70,7 @@ public class SearchFragment extends Fragment {
 
     private static final String TAG = "SearchFragment";
     private OnFragmentInteractionListener mListener;
-    private EditText etKeyword = null;
+    private AutoCompleteTextView etKeyword = null;
     private Button bSearch = null;
     private ListView lvFileList = null;
     private ArrayAdapter<FileInfo> arrayAdapter = null;
@@ -132,7 +135,10 @@ public class SearchFragment extends Fragment {
         final AppSettings appSettings = AppSettings.getInstance();
 
         View view = inflater.inflate(R.layout.fragment_search, container, false);
-        this.etKeyword = (EditText) view.findViewById(R.id.etKeyword);
+        this.etKeyword = (AutoCompleteTextView) view.findViewById(R.id.etKeyword);
+        this.etKeyword.setThreshold(1);
+        this.etKeyword.setAdapter(new AutoCompleteAdapter(ctx, android.R.layout.simple_dropdown_item_1line));
+
         this.bSearch = (Button) view.findViewById(R.id.bSearch);
         this.lvFileList = (ListView) view.findViewById(R.id.lvFileList);
 
@@ -142,6 +148,8 @@ public class SearchFragment extends Fragment {
 
         final SuiseClientW client = appSettings.getSuiseClient();
         final VasstClientW vasstClient = appSettings.getVasstClient();
+//        final McesClient mcesClient = appSettings.getMcesClient();
+        final Chlh2Client chlh2Client = appSettings.getChlh2Client();
 
         progressDialog = new ProgressDialog(ctx, ProgressDialog.STYLE_SPINNER);
         progressDialog.setTitle("Downloading...");
@@ -205,15 +213,27 @@ public class SearchFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 FileInfo fileInfo = arrayAdapter.getItem(position);
-                final String docId = fileInfo.getName();
+
+                String tmpDocId = fileInfo.getName();
                 final int fileType = fileInfo.getType();
                 final String feivS = fileInfo.getFeiv();
-
-                Log.d(TAG, "docId: " + docId);
 
                 final String hostname = appSettings.getAppPref().getString(AppConstants.PREF_SERVER_HOSTNAME, null);
                 final String pingUrl = hostname + "/" + AppConstants.REQ_PING_URL;
                 final String sseType = appSettings.getAppPref().getString(AppConstants.PREF_CLIENT_SSE_TYPE, AppConstants.PREF_CLIENT_SSE_TYPE_SUISE);
+
+                if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                    IByteCipher byteCipher = new AesCbcPkcs5BcImpl(chlh2Client.getSecretKey(), new byte[16]);
+                    try {
+                        tmpDocId = chlh2Client.DecId(tmpDocId, byteCipher);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                final String docId = tmpDocId;
+
+                Log.d(TAG, "docId: " + docId);
 
                 execService.submit(new Runnable() {
                     @Override
@@ -337,6 +357,14 @@ public class SearchFragment extends Fragment {
                                         } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
                                             fileCipher = new AesCbcPkcs5FcImpl(vasstClient.getSecretKey(), iv);
                                             vasstClient.Decrypt(tempFile, decFile, fileCipher, addInfo);
+                                        }
+//                                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)) {
+//                                            fileCipher = new AesCbcPkcs5FcImpl(mcesClient.getK1(), iv);
+//                                            fileCipher.decrypt(tempFile, decFile);
+//                                        }
+                                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                                            fileCipher = new AesCbcPkcs5FcImpl(chlh2Client.getSecretKey(), iv);
+                                            fileCipher.decrypt(tempFile, decFile);
                                         } else {
                                             throw new UnsupportedOperationException();
                                         }
@@ -491,7 +519,7 @@ public class SearchFragment extends Fragment {
                         final String sseType = appSettings.getAppPref().getString(AppConstants.PREF_CLIENT_SSE_TYPE, AppConstants.PREF_CLIENT_SSE_TYPE_SUISE);
 
                         FormBody.Builder formBodyBuilder = new FormBody.Builder();
-                        formBodyBuilder = formBodyBuilder.add("type", sseType);
+                        formBodyBuilder.add("type", sseType);
 
                         String token = null;
 
@@ -501,56 +529,109 @@ public class SearchFragment extends Fragment {
 
                             IByteCipher byteCipher = new AesCbcPkcs5BcImpl(client.getKey1(), new byte[16]);
 
+                            String keyword = etKeyword.getText().toString();
+
+                            SQLiteDatabase db = null;
+
                             try {
-                                token = client.SearchToken(etKeyword.getText().toString(), byteCipher, addInfo).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
+                                db = appSettings.getDatabaseHelper().getWritableDatabase();
+                                db.execSQL("insert into " + AppConstants.TABLE_AUTO_COMPLETE + "(ckeyword) values (?)", new String[]{keyword});
+                            } catch (Exception e) {
+                                Log.e(TAG, "error when insert records to " + AppConstants.TABLE_AUTO_COMPLETE, e);
+                            }
+
+                            if (db != null) {
+                                db.close();
+                            }
+
+                            try {
+                                token = client.SearchToken(keyword, byteCipher, addInfo).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
                             } catch (Exception e) {
                                 Log.e(TAG, "error when creating search token from keyword", e);
                             }
 
-                            formBodyBuilder = formBodyBuilder.add("q", token);
-                            formBodyBuilder = formBodyBuilder.add("st", Constants.SSE_TYPE_SUISE + "");
+                            formBodyBuilder.add("q", token);
+                            formBodyBuilder.add("st", Constants.SSE_TYPE_SUISE + "");
 
                         } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
                             String searchStr = etKeyword.getText().toString();
 
                             // TODO: need to think of a method to ensure same x when performing search
-                            byte x = vasstClient.getSecretKey()[0];
+//                            byte x = vasstClient.getSecretKey()[0];
 
-                    /*
-                    // we need to provide the "x" in order to get correct result
-                    SQLiteDatabase database = appSettings.getDatabaseHelper().getReadableDatabase();
-                    Cursor c = database.rawQuery("select cx from "+AppConstants.TABLE_REMOTE_DOCS+" where cremotename=?", new String[]{docId});
+                            List<Integer> list_of_x = new ArrayList<>();
 
-                    boolean recExists = false;
-                    String remoteId = null;
+                            // we need to provide the "x" in order to get correct result
+                            SQLiteDatabase database = appSettings.getDatabaseHelper().getReadableDatabase();
+                            Cursor c = database.rawQuery("select cx from " + AppConstants.TABLE_REMOTE_DOCS + " where 1=1", null);
 
-                    while (c.moveToNext()){
-                        remoteId = c.getString(c.getColumnIndex("cremoteid"));
-                    }
+                            while (c.moveToNext()) {
+                                list_of_x.add(c.getInt(c.getColumnIndex("cx")));
+                            }
 
-                    c.close();
+                            c.close();
 
-                    Log.d(TAG, "remoteId: "+remoteId);
-
-                    byte x = 0;
-                    */
+                            Log.d(TAG, "list_of_x.size()=" + list_of_x.size());
 
                             IByteCipher byteCipher = new AesCbcPkcs5BcImpl(vasstClient.getSecretKey(), new byte[16]);
 
-                            List<String> encTokens = null;
-                            try {
-                                encTokens = vasstClient.CreateReq(searchStr, x, byteCipher, addInfo);
-                            } catch (Exception e) {
-                                Log.e(TAG, "error when creating search token from keyword", e);
+                            List<String> encTokens = new ArrayList<>();
+                            int list_of_x_sz = list_of_x.size();
+                            for (int i = 0; i < list_of_x_sz; i++) {
+                                BigDecimal x = new BigDecimal(list_of_x.get(i));
+                                try {
+                                    encTokens = vasstClient.CreateReq(searchStr, x, byteCipher, addInfo);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "error when creating search token from keyword", e);
+                                }
                             }
 
                             for (int i = encTokens.size() - 1; i >= 0; i--) {
                                 String encToken = encTokens.get(i);
-                                formBodyBuilder = formBodyBuilder.add("q", encToken);
+                                formBodyBuilder.add("q", encToken);
                             }
 
-                            formBodyBuilder = formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
+                            formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
 
+                        }
+//                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)) {
+//                            String searchStr = etKeyword.getText().toString();
+//
+//                            byte[] iv = new byte[16];
+//                            KeyCipher keyCipher4Mces = new KeyCipher();
+//                            keyCipher4Mces.setK1Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK1(), iv));
+//                            keyCipher4Mces.setK2Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK2(), iv));
+//
+//                            keyCipher4Mces.setKeyedHashFunc(new HmacMd5());
+//
+//                            keyCipher4Mces.setKdCipher(new AesCbcPkcs5BcImpl(mcesClient.getKd(), iv));
+//                            keyCipher4Mces.setKcCipher(new AesCbcPkcs5BcImpl(mcesClient.getKc(), iv));
+//                            keyCipher4Mces.setKlCipher(new AesCbcPkcs5BcImpl(mcesClient.getKl(), iv));
+//
+//                            keyCipher4Mces.setByteCipher(new AesCbcPkcs5BcImpl());
+//
+//                            List<String> dataToServer = null;
+//
+//                            try {
+//                                dataToServer = mcesClient.Query1(keyCipher4Mces, searchStr);
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//
+//                            for (int i = dataToServer.size() - 1; i >= 0; i--) {
+//                                String data = dataToServer.get(i);
+//                                formBodyBuilder = formBodyBuilder.add("q", data);
+//                            }
+//                            formBodyBuilder = formBodyBuilder.add("st", Constants.SSE_TYPE_MCES + "");
+//
+//                        }
+                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                            String searchStr = etKeyword.getText().toString();
+                            List<String> trapdoors = chlh2Client.Trapdoor(searchStr);
+                            for (String trapdoor : trapdoors) {
+                                formBodyBuilder = formBodyBuilder.add("q", trapdoor);
+                            }
+                            formBodyBuilder = formBodyBuilder.add("st", Constants.SSE_TYPE_CHLH + "");
                         } else {
                             throw new UnsupportedOperationException();
                         }

@@ -1,8 +1,9 @@
 package org.coreocto.dev.hf.androidclient.crypto;
 
-import org.coreocto.dev.hf.commonlib.crypto.IBlockCipherCbc;
+//import org.coreocto.dev.hf.commonlib.crypto.IBlockCipherCbc;
 
-public class NativeAes128CbcImpl implements IBlockCipherCbc {
+@Deprecated
+public class NativeAes128CbcImpl/* implements IBlockCipherCbc*/ {
 
     static {
         System.loadLibrary("native-lib");
@@ -12,7 +13,7 @@ public class NativeAes128CbcImpl implements IBlockCipherCbc {
 
     public native byte[] aesCbcDecrypt(byte[] key, byte[] data);
 
-    @Override
+    //@Override
     public byte[] encrypt(byte[] iv, byte[] key, byte[] data) {
         if (
 //                iv == null ||
@@ -23,7 +24,7 @@ public class NativeAes128CbcImpl implements IBlockCipherCbc {
         }
     }
 
-    @Override
+    //@Override
     public byte[] decrypt(byte[] iv, byte[] key, byte[] data) {
         if (
 //                iv == null ||

@@ -10,9 +10,18 @@ public class AppConstants {
     public static final String PREF_SERVER_RPT_STAT = "server.reportStat";
     public static final String PREF_CLIENT_DATA_DIR = "client.datadir";
     public static final String PREF_CLIENT_SSE_TYPE = "client.ssetype";
+    public static final String PREF_CLIENT_DATA_PROTECT = "client.dataprotect";
+
+//    public static final String PREF_CLIENT_KEY3 = "client.key3";
+//    public static final String PREF_CLIENT_KEY4 = "client.key4";
+//    public static final String PREF_CLIENT_KEYD = "client.keyd";
+//    public static final String PREF_CLIENT_KEYC = "client.keyc";
+//    public static final String PREF_CLIENT_KEYL = "client.keyl";
 
     public static final String PREF_CLIENT_SSE_TYPE_SUISE = "SUISE";
-    public static final String PREF_CLIENT_SSE_TYPE_VASST = "VASST";
+    public static final String PREF_CLIENT_SSE_TYPE_VASST = "VASST16";
+    //    public static final String PREF_CLIENT_SSE_TYPE_MCES = "MCES";
+    public static final String PREF_CLIENT_SSE_TYPE_CHLH = "CHLH15";
 
     public static final String REQ_UPLOAD_URL = "upload";
     public static final String REQ_PING_URL = "ping";
@@ -36,6 +45,7 @@ public class AppConstants {
 
     public static final String LOCAL_APP_DB = "hfapp.db";
     public static final String TABLE_REMOTE_DOCS = "tremote_docs";
+    public static final String TABLE_AUTO_COMPLETE = "tauto_complete";
 
     public static final String LOCAL_APP_FOLDER = ".hfandroidclient";
 

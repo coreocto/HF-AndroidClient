@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -447,7 +448,9 @@ public class AddFragment extends Fragment {
                                                 final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
                                                 adStopWatch.start();
 
-                                                TermFreq termFreq = vasstClient.Preprocessing(srcFile, x, fileParser, null);
+                                                BigDecimal x_in_bd = BigDecimal.valueOf(x);
+
+                                                TermFreq termFreq = vasstClient.Preprocessing(srcFile, x_in_bd, fileParser, null);
 
                                                 adStopWatch.stop();
                                                 adStopWatch.setName(docId);

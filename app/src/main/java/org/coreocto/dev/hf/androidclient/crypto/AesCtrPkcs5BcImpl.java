@@ -11,19 +11,19 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-public class AesCbcPkcs5BcImpl implements IByteCipher {
+public class AesCtrPkcs5BcImpl implements IByteCipher {
     private static final String CIPHER_AES = "AES";
-    private static final String CIPHER_TRANSFORM = "AES/CBC/PKCS5Padding";
+    private static final String CIPHER_TRANSFORM = "AES/CTR/PKCS5Padding";
 
     private byte[] key = null;
     private byte[] iv = null;
 
-    public AesCbcPkcs5BcImpl(byte[] key, byte[] iv) {
+    public AesCtrPkcs5BcImpl(byte[] key, byte[] iv) {
         this.key = key;
         this.iv = iv;
     }
 
-    public AesCbcPkcs5BcImpl(){
+    public AesCtrPkcs5BcImpl(){
 
     }
 

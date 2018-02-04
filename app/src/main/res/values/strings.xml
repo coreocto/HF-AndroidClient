@@ -9,6 +9,11 @@
     <string name="pref_client">Client Settings</string>
     <string name="pref_client_key1">Key1</string>
     <string name="pref_client_key2">Key2</string>
+    <!--<string name="pref_client_key3">Key3</string>
+    <string name="pref_client_key4">Key4</string>
+    <string name="pref_client_keyd">KeyD</string>
+    <string name="pref_client_keyc">KeyC</string>
+    <string name="pref_client_keyl">KeyL</string>-->
     <string name="pref_client_genkeys">Generate Keys</string>
     <string name="pref_client_clrappdb">Clear App DB</string>
     <string name="pref_client_datadir">Data Directory</string>
@@ -21,8 +26,11 @@
 
     <string name="pref_crypto_test">Crypto Test Settings</string>
 
-
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_google_drive">GoogleDriveActivity</string>
+
+    <string name="developer_email">coreocto@hotmail.com</string>
+    <string name="developer_name">coreocto</string>
+
 </resources>

@@ -12,7 +12,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-            <EditText
+            <AutoCompleteTextView
                     android:id="@+id/etKeyword"
                     android:layout_width="0dip"
                     android:layout_height="wrap_content"
@@ -21,7 +21,9 @@
                     android:width="250dp"
                     android:ems="10"
                     android:hint="Enter Keyword Here ..."
-                    android:inputType="textPersonName" />
+                    android:inputType="textPersonName" >
+                <requestFocus />
+            </AutoCompleteTextView>
 
             <Button
                     android:id="@+id/bSearch"

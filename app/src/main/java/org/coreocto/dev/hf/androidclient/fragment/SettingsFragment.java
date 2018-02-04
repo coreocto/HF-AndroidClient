@@ -1,7 +1,7 @@
 package org.coreocto.dev.hf.androidclient.fragment;
 
+import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -17,6 +17,7 @@ import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
+import org.coreocto.dev.hf.clientlib.sse.chlh.Chlh2Client;
 import org.coreocto.dev.hf.clientlib.sse.suise.SuiseClient;
 import org.coreocto.dev.hf.clientlib.sse.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.util.IBase64;
@@ -35,8 +36,15 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     private EditTextPreference prefServerHostname = null;
     private EditTextPreference prefClientDatadir = null;
     private ListPreference prefClientSsetype = null;
-    private CheckBoxPreference perfServerReportStat = null;
+    private CheckBoxPreference prefServerReportStat = null;
     private static final String TAG = "SettingsFragment";
+    private CheckBoxPreference prefClientDataProtect = null;
+
+//    private EditTextPreference prefClientKey3 = null;
+//    private EditTextPreference prefClientKey4 = null;
+//    private EditTextPreference prefClientKeyD = null;
+//    private EditTextPreference prefClientKeyC = null;
+//    private EditTextPreference prefClientKeyL = null;
 
     private SharedPreferences sharedPreferences;
 
@@ -73,6 +81,12 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
         updateSummary(prefClientKey2, prefClientKey2.getText());
         updateSummary(prefServerHostname, prefServerHostname.getText());
         updateSummary(prefClientDatadir, prefClientDatadir.getText());
+
+//        updateSummary(prefClientKey3, prefClientKey3.getText());
+//        updateSummary(prefClientKey4, prefClientKey4.getText());
+//        updateSummary(prefClientKeyD, prefClientKeyD.getText());
+//        updateSummary(prefClientKeyC, prefClientKeyC.getText());
+//        updateSummary(prefClientKeyL, prefClientKeyL.getText());
     }
 
     @Override
@@ -88,12 +102,14 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preferences);
 
-        final Context ctx = getActivity();
+        final Activity ctx = getActivity();
 
         final AppSettings appSettings = AppSettings.getInstance();
 
         final SuiseClient suiseClient = appSettings.getSuiseClient();
         final VasstClient vasstClient = appSettings.getVasstClient();
+//        final McesClient mcesClient = appSettings.getMcesClient();
+        final Chlh2Client chlh2Client = appSettings.getChlh2Client();
 
         final IBase64 base64 = new AndroidBase64Impl();
 
@@ -130,6 +146,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
                     updateSummary((EditTextPreference) preference, newValS);
                     suiseClient.setKey1(newKey1);
                     vasstClient.setSecretKey(newKey1);
+                    chlh2Client.setSecretKey(newKey1);
                     //end
                 }
 
@@ -252,13 +269,52 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
                 updateSummary(prefClientKey1, prefClientKey1.getText());
                 updateSummary(prefClientKey2, prefClientKey2.getText());
 
+                chlh2Client.setSecretKey(suiseClient.getKey1());
+
+//                mcesClient.setK1(suiseClient.getKey1());
+//                mcesClient.setK2(suiseClient.getKey2());
+//
+//                Random random = new SecureRandom();
+//
+//                byte[] newKey = new byte[16];
+//                random.nextBytes(newKey);
+//                mcesClient.setK3(newKey);
+//
+//                newKey = new byte[16];
+//                random.nextBytes(newKey);
+//                mcesClient.setK4(newKey);
+//
+//                newKey = new byte[16];
+//                random.nextBytes(newKey);
+//                mcesClient.setKd(newKey);
+//
+//                newKey = new byte[16];
+//                random.nextBytes(newKey);
+//                mcesClient.setKc(newKey);
+//
+//                newKey = new byte[16];
+//                random.nextBytes(newKey);
+//                mcesClient.setKl(newKey);
+
+//                prefClientKey3.setText(base64.encodeToString(mcesClient.getK3()));
+//                prefClientKey4.setText(base64.encodeToString(mcesClient.getK4()));
+//                prefClientKeyD.setText(base64.encodeToString(mcesClient.getKd()));
+//                prefClientKeyC.setText(base64.encodeToString(mcesClient.getKc()));
+//                prefClientKeyL.setText(base64.encodeToString(mcesClient.getKl()));
+//
+//                updateSummary(prefClientKey3, prefClientKey3.getText());
+//                updateSummary(prefClientKey4, prefClientKey4.getText());
+//                updateSummary(prefClientKeyD, prefClientKeyD.getText());
+//                updateSummary(prefClientKeyC, prefClientKeyC.getText());
+//                updateSummary(prefClientKeyL, prefClientKeyL.getText());
+
                 //code for what you want it to do
                 return true;
             }
         });
 
-        perfServerReportStat = (CheckBoxPreference) findPreference(AppConstants.PREF_SERVER_RPT_STAT);
-        perfServerReportStat.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+        prefServerReportStat = (CheckBoxPreference) findPreference(AppConstants.PREF_SERVER_RPT_STAT);
+        prefServerReportStat.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
                 Boolean newValB = (Boolean) newValue;
@@ -267,6 +323,22 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
             }
         });
 
+        prefClientDataProtect = (CheckBoxPreference) findPreference(AppConstants.PREF_CLIENT_DATA_PROTECT);
+        prefClientDataProtect.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                Boolean newValB = (Boolean) newValue;
+                suiseClient.setDataProtected(newValB);
+                vasstClient.setDataProtected(newValB);
+                return true;
+            }
+        });
+
+//        prefClientKey3 = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_KEY3);
+//        prefClientKey4 = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_KEY4);
+//        prefClientKeyD = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_KEYD);
+//        prefClientKeyC = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_KEYC);
+//        prefClientKeyL = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_KEYL);
     }
 
     @Override

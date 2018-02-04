@@ -15,6 +15,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "cremotename varchar," +
                 "cx int)"
         );
+        db.execSQL("create table " + AppConstants.TABLE_AUTO_COMPLETE +
+                "(_id integer primary key not null," +
+                "ckeyword varchar)"
+        );
     }
 
     @Override

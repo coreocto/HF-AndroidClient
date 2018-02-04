@@ -32,7 +32,6 @@ import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkParam;
 import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkTask;
-import org.coreocto.dev.hf.androidclient.crypto.AndroidAes128CbcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.AndroidMd5Impl;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.androidclient.fragment.*;
@@ -41,9 +40,11 @@ import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItem;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemFragment;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemRecyclerViewAdapter;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
+import org.coreocto.dev.hf.androidclient.wrapper.Chlh2ClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
 import org.coreocto.dev.hf.commonlib.sse.suise.util.SuiseUtil;
+import org.coreocto.dev.hf.commonlib.util.IBase64;
 import org.coreocto.dev.hf.commonlib.util.ILogger;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 import org.coreocto.dev.hf.perfmon.aspect.TraceAspect;
@@ -234,9 +235,17 @@ public class NavDwrActivity extends AppCompatActivity
         String key1 = appPref.getString(AppConstants.PREF_CLIENT_KEY1, null);
         String key2 = appPref.getString(AppConstants.PREF_CLIENT_KEY2, null);
 
+//        String key3 = appPref.getString(AppConstants.PREF_CLIENT_KEY3, null);
+//        String key4 = appPref.getString(AppConstants.PREF_CLIENT_KEY4, null);
+//        String keyD = appPref.getString(AppConstants.PREF_CLIENT_KEYD, null);
+//        String keyC = appPref.getString(AppConstants.PREF_CLIENT_KEYC, null);
+//        String keyL = appPref.getString(AppConstants.PREF_CLIENT_KEYL, null);
+
         boolean statEnabled = appPref.getBoolean(AppConstants.PREF_SERVER_RPT_STAT, true);
 
         TraceAspect.setEnabled(statEnabled);
+
+        boolean dataProtectEnabled = appPref.getBoolean(AppConstants.PREF_CLIENT_DATA_PROTECT, true);
 
         ILogger debugLogger = new ILogger() {
             @Override
@@ -245,32 +254,69 @@ public class NavDwrActivity extends AppCompatActivity
             }
         };
 
+        IBase64 base64 = new AndroidBase64Impl();
+
         Registry registry = new Registry();
-        registry.setBase64(new AndroidBase64Impl());
+        registry.setBase64(base64);
         registry.setHashFunc(new AndroidMd5Impl());
-        registry.setBlockCipherCbc(new AndroidAes128CbcImpl());
         registry.setLogger(debugLogger);
         appSettings.setRegistry(registry);
 
         SuiseUtil suiseUtil = new SuiseUtil(registry);
 //        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new NativeAes128CbcImpl());    //there are memory leak problem when using the native aes impl, i will fix it later
 
-        if ((key1 == null || key1.isEmpty()) && (key2 == null || key2.isEmpty())) {
-            appSettings.setSuiseClient(new SuiseClientW(registry, suiseUtil));
-            appSettings.setVasstClient(new VasstClientW(registry));
-        } else {
+        SuiseClientW suiseClient = new SuiseClientW(registry, suiseUtil);
+        VasstClientW vasstClient = new VasstClientW(registry);
+        Chlh2ClientW chlh2Client = new Chlh2ClientW(base64);
+
+//        McesClient mcesClient = new McesClient(base64);
+
+        suiseClient.setDataProtected(dataProtectEnabled);
+        vasstClient.setDataProtected(dataProtectEnabled);
+
+        if (key1!=null && !key1.isEmpty()){
             byte[] key1Bytes = registry.getBase64().decodeToByteArray(key1);
-            byte[] key2Bytes = registry.getBase64().decodeToByteArray(key2);
-
-            SuiseClientW suiseClient = new SuiseClientW(registry, suiseUtil);
             suiseClient.setKey1(key1Bytes);
-            suiseClient.setKey2(key2Bytes);
-            appSettings.setSuiseClient(suiseClient);
-
-            VasstClientW vasstClient = new VasstClientW(registry);
             vasstClient.setSecretKey(key1Bytes);
-            appSettings.setVasstClient(vasstClient);
+//            mcesClient.setK1(key1Bytes);
+            chlh2Client.setSecretKey(key1Bytes);
         }
+
+        if (key2!=null && !key2.isEmpty()){
+            byte[] key2Bytes = registry.getBase64().decodeToByteArray(key2);
+            suiseClient.setKey2(key2Bytes);
+//            mcesClient.setK2(key2Bytes);
+        }
+
+//        if (key3!=null && !key3.isEmpty()){
+//            byte[] key3Bytes = registry.getBase64().decodeToByteArray(key3);
+//            mcesClient.setK3(key3Bytes);
+//        }
+//
+//        if (key4!=null && !key4.isEmpty()){
+//            byte[] key4Bytes = registry.getBase64().decodeToByteArray(key4);
+//            mcesClient.setK4(key4Bytes);
+//        }
+//
+//        if (keyD!=null && !keyD.isEmpty()){
+//            byte[] keyDBytes = registry.getBase64().decodeToByteArray(keyD);
+//            mcesClient.setKd(keyDBytes);
+//        }
+//
+//        if (keyC!=null && !keyC.isEmpty()){
+//            byte[] keyCBytes = registry.getBase64().decodeToByteArray(keyC);
+//            mcesClient.setKc(keyCBytes);
+//        }
+//
+//        if (keyL!=null && !keyL.isEmpty()){
+//            byte[] keyLBytes = registry.getBase64().decodeToByteArray(keyL);
+//            mcesClient.setKl(keyLBytes);
+//        }
+
+        appSettings.setSuiseClient(suiseClient);
+        appSettings.setVasstClient(vasstClient);
+//        appSettings.setMcesClient(mcesClient);
+        appSettings.setChlh2Client(chlh2Client);
         //end
 
 //        byte[] defaultIv = new byte[16];

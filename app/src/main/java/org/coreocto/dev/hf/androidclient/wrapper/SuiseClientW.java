@@ -20,6 +20,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 public class SuiseClientW extends SuiseClient {
+
     public SuiseClientW(Registry registry, SuiseUtil suiseUtil) {
         super(registry, suiseUtil);
     }

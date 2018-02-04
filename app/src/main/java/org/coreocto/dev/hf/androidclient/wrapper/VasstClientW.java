@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -43,12 +44,12 @@ public class VasstClientW extends VasstClient {
 
     // the following method should not be invoked
     @Override
-    public TermFreq Preprocessing(InputStream inputStream, byte x, IFileParser fileParser, IByteCipher byteCipher) {
+    public TermFreq Preprocessing(InputStream inputStream, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher) {
         throw new UnsupportedOperationException("");
     }
 
     @DebugTrace
-    public TermFreq Preprocessing(InputStream inputStream, byte x, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+    public TermFreq Preprocessing(InputStream inputStream, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         TermFreq result = super.Preprocessing(inputStream, x, fileParser, byteCipher);
         addInfo.put("wordCount", result.getTerms().size() + "");
         return result;
@@ -56,12 +57,12 @@ public class VasstClientW extends VasstClient {
 
     // the following method should not be invoked
     @Override
-    public TermFreq Preprocessing(File inFile, byte x, IFileParser fileParser, IByteCipher byteCipher) {
+    public TermFreq Preprocessing(File inFile, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher) {
         throw new UnsupportedOperationException("");
     }
 
     @DebugTrace
-    public TermFreq Preprocessing(File inFile, byte x, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+    public TermFreq Preprocessing(File inFile, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
         TermFreq result = super.Preprocessing(inFile, x, fileParser, byteCipher);
         addInfo.put("wordCount", result.getTerms().size() + "");
         return result;
@@ -69,12 +70,12 @@ public class VasstClientW extends VasstClient {
 
     // the following method should not be invoked
     @Override
-    public List<String> CreateReq(String query, byte x, IByteCipher byteCipher) {
+    public List<String> CreateReq(String query, BigDecimal x, IByteCipher byteCipher) {
         throw new UnsupportedOperationException("");
     }
 
     @DebugTrace
-    public List<String> CreateReq(String query, byte x, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+    public List<String> CreateReq(String query, BigDecimal x, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         return super.CreateReq(query, x, byteCipher);
     }
 

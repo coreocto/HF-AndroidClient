@@ -38,15 +38,18 @@ import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
 import org.coreocto.dev.hf.androidclient.view.UploadItemArrayAdapter;
+import org.coreocto.dev.hf.androidclient.wrapper.Chlh2ClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
 import org.coreocto.dev.hf.clientlib.parser.IFileParser;
 import org.coreocto.dev.hf.clientlib.parser.TxtFileParserImpl;
+import org.coreocto.dev.hf.clientlib.sse.chlh.Chlh2Client;
 import org.coreocto.dev.hf.clientlib.sse.suise.SuiseClient;
 import org.coreocto.dev.hf.clientlib.sse.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.Constants;
 import org.coreocto.dev.hf.commonlib.crypto.IByteCipher;
 import org.coreocto.dev.hf.commonlib.crypto.IFileCipher;
+import org.coreocto.dev.hf.commonlib.sse.chlh.Index;
 import org.coreocto.dev.hf.commonlib.sse.suise.bean.AddTokenResult;
 import org.coreocto.dev.hf.commonlib.sse.vasst.bean.TermFreq;
 import org.coreocto.dev.hf.commonlib.util.IBase64;
@@ -55,6 +58,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -243,7 +247,7 @@ public class UploadFragment extends Fragment {
                 return result;
             }
 
-            private void saveEncFileToDrive(final Uri docUri, final String docId, final Object sseClient, final boolean enableStatRpt, final byte[] randomIv) {
+            private void saveFileToDrive(final Uri docUri, final String docId, final Object sseClient, final boolean enableStatRpt, final byte[] randomIv) {
 
                 final Task<DriveFolder> rootFolderTask = mDriveResourceClient.getRootFolder();
                 final Task<DriveContents> createContentsTask = mDriveResourceClient.createContents();
@@ -265,18 +269,30 @@ public class UploadFragment extends Fragment {
                                 addInfo.put("fileSize", curFileSz + "");
                                 addInfo.put("name", docId);
 
+                                IFileCipher fileCipher = null;
                                 InputStream inputStream = null;
+
                                 try {
                                     inputStream = ctx.getContentResolver().openInputStream(docUri);
 
                                     if (sseClient instanceof SuiseClient) {
                                         SuiseClientW suiseClientW = (SuiseClientW) sseClient;
-                                        IFileCipher fileCipher = new AesCbcPkcs5FcImpl(suiseClientW.getKey2(), randomIv);
+                                        fileCipher = new AesCbcPkcs5FcImpl(suiseClientW.getKey2(), randomIv);
                                         suiseClientW.Enc(inputStream, outputStream, fileCipher, addInfo);
                                     } else if (sseClient instanceof VasstClient) {
                                         VasstClientW vasstClientW = (VasstClientW) sseClient;
-                                        IFileCipher fileCipher = new AesCbcPkcs5FcImpl(vasstClientW.getSecretKey(), randomIv);
+                                        fileCipher = new AesCbcPkcs5FcImpl(vasstClientW.getSecretKey(), randomIv);
                                         vasstClientW.Encrypt(inputStream, outputStream, fileCipher, addInfo);
+                                    }
+//                                    else if (sseClient instanceof McesClient) {
+//                                        //mces scheme does not mention about the file encryption part
+//                                        //so the encryption will take place here
+//                                        fileCipher = new AesCbcPkcs5FcImpl(((McesClient) sseClient).getK1(), randomIv);
+//                                        fileCipher.encrypt(inputStream, outputStream);
+//                                    }
+                                    else if (sseClient instanceof Chlh2Client) {
+                                        fileCipher = new AesCbcPkcs5FcImpl(((Chlh2Client) sseClient).getSecretKey(), randomIv);
+                                        fileCipher.encrypt(inputStream, outputStream);
                                     }
 
                                 } catch (Exception e1) {
@@ -365,7 +381,7 @@ public class UploadFragment extends Fragment {
                 }
 
                 final String hostname = appSettings.getAppPref().getString(AppConstants.PREF_SERVER_HOSTNAME, null);
-                final String datadir = appSettings.getAppPref().getString(AppConstants.PREF_CLIENT_DATA_DIR, null);
+//                final String datadir = appSettings.getAppPref().getString(AppConstants.PREF_CLIENT_DATA_DIR, null);
                 final String ssetype = appSettings.getAppPref().getString(AppConstants.PREF_CLIENT_SSE_TYPE, AppConstants.PREF_CLIENT_SSE_TYPE_SUISE);
 
                 progressDialog = new ProgressDialog(ctx, ProgressDialog.STYLE_SPINNER);
@@ -381,6 +397,8 @@ public class UploadFragment extends Fragment {
 
                 final SuiseClientW client = appSettings.getSuiseClient();
                 final VasstClientW vasstClient = appSettings.getVasstClient();
+//                final McesClient mcesClient = appSettings.getMcesClient();
+                final Chlh2ClientW chlh2Client = appSettings.getChlh2Client();
 
                 final String extStore = Environment.getExternalStorageDirectory().toString();
 
@@ -445,10 +463,10 @@ public class UploadFragment extends Fragment {
 
                                         IFileParser fileParser = null;
                                         String ext = FilenameUtils.getExtension(docUri.getPath());
-                                        if ("pdf".equalsIgnoreCase(ext)) {
+                                        if (Constants.FILE_EXT_PDF.equalsIgnoreCase(ext)) {
                                             fileParser = new PdfFileParserImpl();
                                             formBodyBuilder.add("ft", Constants.FILE_TYPE_PDF + "");
-                                        } else if ("doc".equalsIgnoreCase(ext)) {
+                                        } else if (Constants.FILE_EXT_DOC.equalsIgnoreCase(ext)) {
                                             fileParser = new DocFileParserImpl();
                                             formBodyBuilder.add("ft", Constants.FILE_TYPE_DOC + "");
                                         } else {
@@ -467,16 +485,22 @@ public class UploadFragment extends Fragment {
                                                 Log.d(TAG, "insert: id = " + id);
                                             }
 
-                                            // moved measure code into saveEncFileToDrive
+                                            // moved measure code into saveFileToDrive
                                             //final DocEncryptStopWatch encStopWatch = new DocEncryptStopWatch(docId, srcFile.length());
                                             //encStopWatch.start();
 
                                             secureRandom.nextBytes(randomIvForFC);
 
                                             if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
-                                                saveEncFileToDrive(docUri, docId, client, enableStatRpt, randomIvForFC);
+                                                saveFileToDrive(docUri, docId, client, enableStatRpt, randomIvForFC);
                                             } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
-                                                saveEncFileToDrive(docUri, docId, vasstClient, enableStatRpt, randomIvForFC);
+                                                saveFileToDrive(docUri, docId, vasstClient, enableStatRpt, randomIvForFC);
+                                            }
+//                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)){
+//                                                saveFileToDrive(docUri, docId, mcesClient, enableStatRpt, randomIvForFC);
+//                                            }
+                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                                                saveFileToDrive(docUri, docId, chlh2Client, enableStatRpt, randomIvForFC);
                                             }
 
                                             formBodyBuilder.add("feiv", base64.encodeToString(randomIvForFC));
@@ -518,9 +542,9 @@ public class UploadFragment extends Fragment {
 //                                            Log.d(TAG, "token = " + token);
 //                                            Log.d(TAG, "docId = " + docId);
 
-                                                formBodyBuilder = formBodyBuilder.add("token", token);
-                                                formBodyBuilder = formBodyBuilder.add("docId", docId);
-                                                formBodyBuilder = formBodyBuilder.add("weiv", base64.encodeToString(iv));
+                                                formBodyBuilder.add("token", token);
+                                                formBodyBuilder.add("docId", docId);
+                                                formBodyBuilder.add("weiv", base64.encodeToString(iv));
                                             } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
 
                                                 formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
@@ -537,13 +561,15 @@ public class UploadFragment extends Fragment {
                                                     Log.d(TAG, "affectedRows(update): " + affectedRows);
                                                 }
 
+                                                BigDecimal x_in_bd = BigDecimal.valueOf(x);
+
 //                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
 //                                                adStopWatch.start();
 
                                                 byte[] iv = new byte[16];
                                                 IByteCipher byteCipher = new AesCbcPkcs5BcImpl(vasstClient.getSecretKey(), iv);
 
-                                                TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x, fileParser, byteCipher, addInfo);
+                                                TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x_in_bd, fileParser, byteCipher, addInfo);
 
 //                                                adStopWatch.stop();
 //                                                adStopWatch.setName(docId);
@@ -551,9 +577,90 @@ public class UploadFragment extends Fragment {
 
                                                 String terms = gson.toJson(termFreq);
 
-                                                formBodyBuilder = formBodyBuilder.add("terms", terms);
-                                                formBodyBuilder = formBodyBuilder.add("docId", docId);
-                                                formBodyBuilder = formBodyBuilder.add("weiv", base64.encodeToString(iv));
+                                                formBodyBuilder.add("terms", terms);
+                                                formBodyBuilder.add("docId", docId);
+                                                formBodyBuilder.add("weiv", base64.encodeToString(iv));
+                                            }
+//                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)){
+//                                                formBodyBuilder.add("st", Constants.SSE_TYPE_MCES + "");
+//
+//                                                byte[] iv = new byte[16];
+//                                                KeyCipher keyCipher4Mces = new KeyCipher();
+//                                                keyCipher4Mces.setK1Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK1(), iv));
+//                                                keyCipher4Mces.setK2Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK2(), iv));
+//
+//                                                keyCipher4Mces.setKeyedHashFunc(new HmacMd5());
+//
+//                                                keyCipher4Mces.setKdCipher(new AesCbcPkcs5BcImpl(mcesClient.getKd(), iv));
+//                                                keyCipher4Mces.setKcCipher(new AesCbcPkcs5BcImpl(mcesClient.getKc(), iv));
+//                                                keyCipher4Mces.setKlCipher(new AesCbcPkcs5BcImpl(mcesClient.getKl(), iv));
+//
+//                                                keyCipher4Mces.setByteCipher(new AesCbcPkcs5BcImpl());
+//
+//                                                List<String> keywords = fileParser.getText(ctx.getContentResolver().openInputStream(docUri));
+//
+//                                                int keywordSize = keywords.size();
+//
+//                                                for (int z=0;z<keywordSize;z++){
+//                                                    String keyword = keywords.get(z);
+//                                                    CT cipherText = mcesClient.Enc(keyword,keyCipher4Mces);
+//
+//                                                    //as it would take to much memory to create all index at once
+//                                                    //i tried to minimize the memory footprint by send the ct to server each time
+//                                                    String cipherText_in_json = gson.toJson(cipherText);
+//
+//                                                    FormBody.Builder newForm = formBodyBuilder;
+//                                                    newForm = newForm.add("ct", cipherText_in_json);
+//                                                    newForm = newForm.add("docId", docId);
+//                                                    newForm = newForm.add("weiv", base64.encodeToString(iv));
+//
+//                                                    RequestBody newRequestBody = newForm.build();
+//                                                    Request newRequest = new Request.Builder()
+//                                                            .url(url)
+//                                                            .post(newRequestBody)
+//                                                            .build();
+//
+//                                                    httpClient.newCall(newRequest).enqueue(new Callback() {
+//                                                        @Override
+//                                                        public void onFailure(Call call, IOException e) {
+//                                                        }
+//
+//                                                        @Override
+//                                                        public void onResponse(Call call, okhttp3.Response response) throws IOException {
+//                                                            if (!response.isSuccessful()) {
+//                                                                // Handle the error
+//                                                                Log.i(TAG, "error when executing http request");
+//                                                            } else {
+//                                                                Log.i(TAG, "http request ok");
+//                                                            }
+//
+//                                                            response.body().close();
+//                                                        }
+//                                                    });
+//                                                }
+//
+//
+////                                                List<CT> cipherText = mcesClient.Enc(ctx.getContentResolver().openInputStream(docUri), keyCipher4Mces, fileParser);
+////
+////                                                String cipherText_in_json = gson.toJson(cipherText);
+//
+////                                                formBodyBuilder = formBodyBuilder.add("ct", cipherText_in_json);
+//                                                formBodyBuilder = formBodyBuilder.add("docId", docId);
+//                                                formBodyBuilder = formBodyBuilder.add("weiv", base64.encodeToString(iv));
+//                                            }
+                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                                                formBodyBuilder.add("st", Constants.SSE_TYPE_CHLH + "");
+
+                                                byte[] iv = new byte[16];
+                                                IByteCipher byteCipher = new AesCbcPkcs5BcImpl(chlh2Client.getSecretKey(), iv);
+
+                                                Index index = chlh2Client.BuildIndex(ctx.getContentResolver().openInputStream(docUri), fileParser, docId, byteCipher, addInfo);
+
+                                                String index_in_json = gson.toJson(index);
+
+                                                formBodyBuilder.add("index", index_in_json);
+                                                formBodyBuilder.add("docId", index.getDocId());
+                                                formBodyBuilder.add("weiv", base64.encodeToString(iv));
                                             }
 
                                         } catch (Exception e) {
@@ -640,11 +747,11 @@ public class UploadFragment extends Fragment {
     private static final int READ_REQUEST_CODE = 42;
 
     private static final String[] mimeTypes =
-            {"application/msword", //"application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .doc & .docx
+            {Constants.MIME_TYPE_DOC, //"application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .doc & .docx
                     //"application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .ppt & .pptx
                     //"application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xls & .xlsx
-                    "text/plain",
-                    "application/pdf"
+                    Constants.MIME_TYPE_TEXT,
+                    Constants.MIME_TYPE_PDF
                     //"application/zip"
             };
 
