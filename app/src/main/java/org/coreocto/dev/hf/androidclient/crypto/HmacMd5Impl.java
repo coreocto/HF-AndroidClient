@@ -9,7 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-public class HmacMd5 implements IKeyedHashFunc {
+public class HmacMd5Impl implements IKeyedHashFunc {
     private static final String HMAC_MD5_ALGORITHM = "HmacMD5";
 
     public byte[] getHash(String key, String s) throws UnsupportedEncodingException, InvalidKeyException, NoSuchAlgorithmException {

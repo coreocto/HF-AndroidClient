@@ -392,7 +392,7 @@ public class BenchmarkTask extends AsyncTask<BenchmarkParam, BenchmarkResult, Li
 
         mDialog.dismiss();
         if (mContext instanceof NavDwrActivity) {
-            ChartResultFragment chartResultFrag = (ChartResultFragment) ((NavDwrActivity) mContext).goToFragment(AppConstants.FRAGMENT_CHART_RESULT, true);
+            ChartResultFragment chartResultFrag = (ChartResultFragment) ((NavDwrActivity) mContext).replaceFragment(AppConstants.FRAGMENT_CHART_RESULT, true);
             chartResultFrag.setBarChartData(resultList);
         }
     }

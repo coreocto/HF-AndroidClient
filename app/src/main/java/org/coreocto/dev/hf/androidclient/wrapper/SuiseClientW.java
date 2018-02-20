@@ -2,13 +2,13 @@ package org.coreocto.dev.hf.androidclient.wrapper;
 
 import org.coreocto.dev.hf.clientlib.parser.IFileParser;
 import org.coreocto.dev.hf.clientlib.sse.suise.SuiseClient;
-import org.coreocto.dev.hf.commonlib.crypto.IByteCipher;
 import org.coreocto.dev.hf.commonlib.crypto.IFileCipher;
+import org.coreocto.dev.hf.commonlib.crypto.IKeyedHashFunc;
 import org.coreocto.dev.hf.commonlib.sse.suise.bean.AddTokenResult;
 import org.coreocto.dev.hf.commonlib.sse.suise.bean.SearchTokenResult;
 import org.coreocto.dev.hf.commonlib.sse.suise.util.SuiseUtil;
-import org.coreocto.dev.hf.commonlib.util.Registry;
-import org.coreocto.dev.hf.perfmon.annotation.DebugTrace;
+import org.coreocto.dev.hf.commonlib.util.IBase64;
+import org.coreocto.dev.hf.perfmon.annotation.PrefMon;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -18,11 +18,12 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.Random;
 
 public class SuiseClientW extends SuiseClient {
 
-    public SuiseClientW(Registry registry, SuiseUtil suiseUtil) {
-        super(registry, suiseUtil);
+    public SuiseClientW(SuiseUtil suiseUtil, IBase64 base64) {
+        super(suiseUtil, base64);
     }
 
     @Override
@@ -36,7 +37,7 @@ public class SuiseClientW extends SuiseClient {
     }
 
     @Override
-    @DebugTrace
+    @PrefMon
     public void Gen(int noOfBytes) {
         super.Gen(noOfBytes);
     }
@@ -47,7 +48,7 @@ public class SuiseClientW extends SuiseClient {
         throw new UnsupportedOperationException("");
     }
 
-    @DebugTrace
+    @PrefMon
     public void Dec(InputStream fis, OutputStream fos, IFileCipher fileCipher, Map<String, String> addInfo) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException {
         super.Dec(fis, fos, fileCipher);
     }
@@ -58,7 +59,7 @@ public class SuiseClientW extends SuiseClient {
         throw new UnsupportedOperationException("");
     }
 
-    @DebugTrace
+    @PrefMon
     public void Enc(InputStream fis, OutputStream fos, IFileCipher fileCipher, Map<String, String> addInfo) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException {
         super.Enc(fis, fos, fileCipher);
     }
@@ -69,7 +70,7 @@ public class SuiseClientW extends SuiseClient {
         throw new UnsupportedOperationException("");
     }
 
-    @DebugTrace
+    @PrefMon
     public void Enc(File fi, File fo, IFileCipher fileCipher, Map<String, String> addInfo) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IOException {
         super.Enc(fi, fo, fileCipher);
     }
@@ -80,43 +81,43 @@ public class SuiseClientW extends SuiseClient {
         throw new UnsupportedOperationException("");
     }
 
-    @DebugTrace
+    @PrefMon
     public void Dec(File fi, File fo, IFileCipher fileCipher, Map<String, String> addInfo) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IOException {
         super.Dec(fi, fo, fileCipher);
     }
 
     // the following method should not be invoked
     @Override
-    public AddTokenResult AddToken(InputStream inputStream, boolean includeSubStr, String docId, IFileParser fileParser, IByteCipher byteCipher) throws BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-        return super.AddToken(inputStream, includeSubStr, docId, fileParser, byteCipher);
+    public AddTokenResult AddToken(InputStream inputStream, boolean includePrefix, boolean includeSuffix, String docId, IFileParser fileParser, IKeyedHashFunc keyedHashFunc, Random random) throws BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+        return super.AddToken(inputStream, includePrefix, includeSuffix, docId, fileParser, keyedHashFunc, random);
     }
 
-    @DebugTrace
-    public AddTokenResult AddToken(InputStream inputStream, boolean includeSubStr, String docId, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-        AddTokenResult result = super.AddToken(inputStream, includeSubStr, docId, fileParser, byteCipher);
+    @PrefMon
+    public AddTokenResult AddToken(InputStream inputStream, boolean includePrefix, boolean includeSuffix, String docId, IFileParser fileParser, IKeyedHashFunc keyedHashFunc, Random random, Map<String, String> addInfo) throws BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+        AddTokenResult result = super.AddToken(inputStream, includePrefix, includeSuffix, docId, fileParser, keyedHashFunc, random);
         addInfo.put("wordCount", result.getC().size() + "");
         return result;
     }
 
     // the following method should not be invoked
     @Override
-    public AddTokenResult AddToken(File inFile, boolean includeSubStr, String docId, IFileParser fileParser, IByteCipher byteCipher) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+    public AddTokenResult AddToken(File inFile, boolean includePrefix, boolean includeSuffix, String docId, IFileParser fileParser, IKeyedHashFunc keyedHashFunc, Random random) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         throw new UnsupportedOperationException("");
     }
 
-    @DebugTrace
-    public AddTokenResult AddToken(File inFile, boolean includeSubStr, String docId, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        return super.AddToken(inFile, includeSubStr, docId, fileParser, byteCipher);
+    @PrefMon
+    public AddTokenResult AddToken(File inFile, boolean includePrefix, boolean includeSuffix, String docId, IFileParser fileParser, IKeyedHashFunc keyedHashFunc, Random random, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        return super.AddToken(inFile, includePrefix, includeSuffix, docId, fileParser, keyedHashFunc, random);
     }
 
     // the following method should not be invoked
     @Override
-    public SearchTokenResult SearchToken(String keyword, IByteCipher byteCipher) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+    public SearchTokenResult SearchToken(String keyword, IKeyedHashFunc keyedHashFunc) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         throw new UnsupportedOperationException("");
     }
 
-    @DebugTrace
-    public SearchTokenResult SearchToken(String keyword, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        return super.SearchToken(keyword, byteCipher);
+    @PrefMon
+    public SearchTokenResult SearchToken(String keyword, IKeyedHashFunc keyedHashFunc, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        return super.SearchToken(keyword, keyedHashFunc);
     }
 }

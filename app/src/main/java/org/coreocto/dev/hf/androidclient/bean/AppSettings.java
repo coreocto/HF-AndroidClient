@@ -3,8 +3,10 @@ package org.coreocto.dev.hf.androidclient.bean;
 import android.content.SharedPreferences;
 import com.google.gson.Gson;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
+import org.coreocto.dev.hf.androidclient.wrapper.Chlh2ClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
+import org.coreocto.dev.hf.clientlib.sse.mces.McesClient;
 import org.coreocto.dev.hf.commonlib.util.Registry;
 
 public class AppSettings {
@@ -16,12 +18,30 @@ public class AppSettings {
     private Registry registry;
     private VasstClientW vasstClient;
     private DatabaseHelper databaseHelper;
+    private Chlh2ClientW chlh2Client;
+    private McesClient mcesClient;
 
     public static AppSettings getInstance() {
         if (instance == null) {
             instance = new AppSettings();
         }
         return instance;
+    }
+
+    public Chlh2ClientW getChlh2Client() {
+        return chlh2Client;
+    }
+
+    public void setChlh2Client(Chlh2ClientW chlh2Client) {
+        this.chlh2Client = chlh2Client;
+    }
+
+    public McesClient getMcesClient() {
+        return mcesClient;
+    }
+
+    public void setMcesClient(McesClient mcesClient) {
+        this.mcesClient = mcesClient;
     }
 
     public VasstClientW getVasstClient() {

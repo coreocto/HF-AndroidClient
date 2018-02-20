@@ -1,5 +1,6 @@
 package org.coreocto.dev.hf.androidclient.benchmark;
 
+@Deprecated
 public class AddTokenStopWatch extends StopWatch {
     protected int wordCount;
 

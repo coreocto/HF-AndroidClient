@@ -35,15 +35,18 @@ import org.coreocto.dev.hf.androidclient.bean.FileInfo;
 import org.coreocto.dev.hf.androidclient.bean.SearchResponse;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5BcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5FcImpl;
+import org.coreocto.dev.hf.androidclient.crypto.HmacMd5Impl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.view.AutoCompleteAdapter;
 import org.coreocto.dev.hf.androidclient.view.SearchResultAdapter;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
+import org.coreocto.dev.hf.clientlib.LibConstants;
 import org.coreocto.dev.hf.clientlib.sse.chlh.Chlh2Client;
 import org.coreocto.dev.hf.commonlib.Constants;
 import org.coreocto.dev.hf.commonlib.crypto.IByteCipher;
 import org.coreocto.dev.hf.commonlib.crypto.IFileCipher;
+import org.coreocto.dev.hf.commonlib.crypto.IKeyedHashFunc;
 import org.coreocto.dev.hf.commonlib.util.IBase64;
 
 import java.io.*;
@@ -99,34 +102,6 @@ public class SearchFragment extends Fragment {
         super.onCreate(savedInstanceState);
     }
 
-//    private Handler dismissDialogHandler = new Handler() {
-//        @Override
-//        public void handleMessage(Message msg) {// handler接收到消息后就会执行此方法
-//
-//            if (msg.what == AppConstants.ERR_CANNOT_CONNECT_SERVER) {
-////                progressDialog.dismiss();// 关闭ProgressDialog
-//                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-//                builder.setTitle("Error")
-//                        .setMessage("Cannot connect to server.")
-//                        .setCancelable(false)
-//                        .setPositiveButton("OK", null)
-//                        .show();
-//            }
-////            else {
-////
-////                int max = progressDialog.getMax();
-////                Log.d(TAG, "msg.what = " + msg.what);
-////                //Log.d(TAG, "progressDialog.max = " + max);
-////                if (msg.what + 1 >= max) {
-////                    progressDialog.dismiss();// 关闭ProgressDialog
-////                } else {
-////                    progressDialog.setMessage("Uploading documents (" + (msg.what + 1) + "/" + max + "), please wait...");
-////                    progressDialog.setProgress(msg.what);
-////                }
-////            }
-//        }
-//    };
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
@@ -165,19 +140,9 @@ public class SearchFragment extends Fragment {
 
         final OkHttpClient httpClient = builder.build();
 
-        //final FragmentActivity activity = getActivity();
-
         final Handler mHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {// handler接收到消息后就会执行此方法
-//                if (msg.what == 0) {
-//                    AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-//                    builder.setTitle("Search result")
-//                            .setMessage("No documents were found.")
-//                            .setCancelable(false)
-//                            .setPositiveButton("OK", null)
-//                            .show();
-//                } else {
 
                 if (msg.what == AppConstants.ERR_GOOGLE_DRIVE_FILE_NOT_READY) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
@@ -221,15 +186,6 @@ public class SearchFragment extends Fragment {
                 final String hostname = appSettings.getAppPref().getString(AppConstants.PREF_SERVER_HOSTNAME, null);
                 final String pingUrl = hostname + "/" + AppConstants.REQ_PING_URL;
                 final String sseType = appSettings.getAppPref().getString(AppConstants.PREF_CLIENT_SSE_TYPE, AppConstants.PREF_CLIENT_SSE_TYPE_SUISE);
-
-                if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
-                    IByteCipher byteCipher = new AesCbcPkcs5BcImpl(chlh2Client.getSecretKey(), new byte[16]);
-                    try {
-                        tmpDocId = chlh2Client.DecId(tmpDocId, byteCipher);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
 
                 final String docId = tmpDocId;
 
@@ -423,63 +379,7 @@ public class SearchFragment extends Fragment {
                     }
                 });
 
-//                if (recExists){
-//                    DriveId driveId = new DriveId();
-//                }
-
             }
-
-//            private void retrieveContents(DriveFile file) {
-//                // [START read_with_progress_listener]
-//                OpenFileCallback openCallback = new OpenFileCallback() {
-//                    @Override
-//                    public void onProgress(long bytesDownloaded, long bytesExpected) {
-//                        // Update progress dialog with the latest progress.
-//                        int progress = (int) (bytesDownloaded * 100 / bytesExpected);
-//                        Log.d(TAG, String.format("Loading progress: %d percent", progress));
-//                        mProgressBar.setProgress(progress);
-//                    }
-//
-//                    @Override
-//                    public void onContents(@NonNull DriveContents driveContents) {
-//                        // onProgress may not be called for files that are already
-//                        // available on the device. Mark the progress as complete
-//                        // when contents available to ensure status is updated.
-//                        mProgressBar.setProgress(100);
-//                        // Read contents
-//                        // [START_EXCLUDE]
-//                        try {
-//                            try (BufferedReader reader = new BufferedReader(
-//                                    new InputStreamReader(driveContents.getInputStream()))) {
-//                                StringBuilder builder = new StringBuilder();
-//                                String line;
-//                                while ((line = reader.readLine()) != null) {
-//                                    builder.append(line);
-//                                }
-//                                showMessage(getString(R.string.content_loaded));
-//                                mFileContents.setText(builder.toString());
-//                                getDriveResourceClient().discardContents(driveContents);
-//                            }
-//                        } catch (IOException e) {
-//                            onError(e);
-//                        }
-//                        // [END_EXCLUDE]
-//                    }
-//
-//                    @Override
-//                    public void onError(@NonNull Exception e) {
-//                        // Handle error
-//                        // [START_EXCLUDE]
-//                        Log.e(TAG, "Unable to read contents", e);
-//                        showMessage(getString(R.string.read_failed));
-//                        finish();
-//                        // [END_EXCLUDE]
-//                    }
-//                };
-//
-//                getDriveResourceClient().openFile(file, DriveFile.MODE_READ_ONLY, openCallback);
-//                // [END read_with_progress_listener]
-//            }
 
         });
 
@@ -535,7 +435,9 @@ public class SearchFragment extends Fragment {
 
                             try {
                                 db = appSettings.getDatabaseHelper().getWritableDatabase();
-                                db.execSQL("insert into " + AppConstants.TABLE_AUTO_COMPLETE + "(ckeyword) values (?)", new String[]{keyword});
+                                String[] param = new String[]{keyword};
+                                db.execSQL("delete from " + AppConstants.TABLE_AUTO_COMPLETE + " where ckeyword = ?", param);
+                                db.execSQL("insert into " + AppConstants.TABLE_AUTO_COMPLETE + " (ckeyword) values (?)", param);
                             } catch (Exception e) {
                                 Log.e(TAG, "error when insert records to " + AppConstants.TABLE_AUTO_COMPLETE, e);
                             }
@@ -544,8 +446,10 @@ public class SearchFragment extends Fragment {
                                 db.close();
                             }
 
+                            IKeyedHashFunc keyedHashFunc = new HmacMd5Impl();
+
                             try {
-                                token = client.SearchToken(keyword, byteCipher, addInfo).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
+                                token = client.SearchToken(keyword, keyedHashFunc, addInfo).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
                             } catch (Exception e) {
                                 Log.e(TAG, "error when creating search token from keyword", e);
                             }
@@ -602,7 +506,7 @@ public class SearchFragment extends Fragment {
 //                            keyCipher4Mces.setK1Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK1(), iv));
 //                            keyCipher4Mces.setK2Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK2(), iv));
 //
-//                            keyCipher4Mces.setKeyedHashFunc(new HmacMd5());
+//                            keyCipher4Mces.setKeyedHashFunc(new HmacMd5Impl());
 //
 //                            keyCipher4Mces.setKdCipher(new AesCbcPkcs5BcImpl(mcesClient.getKd(), iv));
 //                            keyCipher4Mces.setKcCipher(new AesCbcPkcs5BcImpl(mcesClient.getKc(), iv));
@@ -645,13 +549,9 @@ public class SearchFragment extends Fragment {
                                 .post(requestBody)
                                 .build();
 
-//                final SearchStopWatch searchStopWatch = new SearchStopWatch();
-//                searchStopWatch.start();
-
                         httpClient.newCall(request).enqueue(new Callback() {
                             @Override
                             public void onFailure(Call call, IOException e) {
-//                        searchStopWatch.stop();
                                 Log.e(TAG, "call failed", e);
                             }
 
@@ -675,6 +575,25 @@ public class SearchFragment extends Fragment {
                                         Log.e(TAG, "error when parsing response into object", ex);
                                     }
 
+                                    IBase64 base64 = new AndroidBase64Impl();
+
+                                    if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                                        List<FileInfo> fileList = searchResponse.getFiles();
+                                        IByteCipher byteCipher = new AesCbcPkcs5BcImpl(chlh2Client.getSecretKey(), new byte[16]);
+                                        for (FileInfo fileInfo : fileList) {
+                                            String tmp = fileInfo.getName();
+                                            String decId = null;
+                                            try {
+                                                decId = new String(byteCipher.decrypt(base64.decodeToByteArray(tmp)), LibConstants.ENCODING_UTF8);
+                                            } catch (Exception e) {
+                                                Log.e(TAG, "error when decrypting encrypted docId", e);
+                                            }
+                                            if (tmp != null) {
+                                                fileInfo.setName(decId);
+                                            }
+                                        }
+                                    }
+
                                     fileList.clear();
 
                                     if (searchResponse != null) {
@@ -690,16 +609,7 @@ public class SearchFragment extends Fragment {
                                     mHandler.sendEmptyMessage(fileList.size());
                                 }
 
-//                        searchStopWatch.stop();
-
-//                        if (enableStatRpt) {
-//                            pushStat(uploadStopWatch, "encrypt");
-//                        }
-
                                 response.close();
-
-                                //appDb.insert(BenchmarkReaderContract.BenchmarkEntry.TABLE_NAME, null, uploadStopWatch.getContentValues());
-                                // Upload successful
                             }
                         });
                     }

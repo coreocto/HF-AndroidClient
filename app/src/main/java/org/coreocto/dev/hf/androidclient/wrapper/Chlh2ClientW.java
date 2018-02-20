@@ -5,7 +5,7 @@ import org.coreocto.dev.hf.clientlib.sse.chlh.Chlh2Client;
 import org.coreocto.dev.hf.commonlib.crypto.IByteCipher;
 import org.coreocto.dev.hf.commonlib.sse.chlh.Index;
 import org.coreocto.dev.hf.commonlib.util.IBase64;
-import org.coreocto.dev.hf.perfmon.annotation.DebugTrace;
+import org.coreocto.dev.hf.perfmon.annotation.PrefMon;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -24,11 +24,10 @@ public class Chlh2ClientW extends Chlh2Client {
         super(base64);
     }
 
-    @DebugTrace
+    @PrefMon
     public Index BuildIndex(InputStream is, IFileParser fileParser, String docId, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         Index output = super.BuildIndex(is, fileParser, docId, byteCipher);
         addInfo.put("wordCount", output.getWordCnt() + "");
-        output.setWordCnt(0);
         return output;
     }
 

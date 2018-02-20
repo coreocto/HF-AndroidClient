@@ -9,7 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-public class HmacSha1 implements IKeyedHashFunc {
+public class HmacSha1Impl implements IKeyedHashFunc {
 
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
 

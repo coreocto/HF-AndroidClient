@@ -34,7 +34,10 @@ import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkParam;
 import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkTask;
 import org.coreocto.dev.hf.androidclient.crypto.AndroidMd5Impl;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
-import org.coreocto.dev.hf.androidclient.fragment.*;
+import org.coreocto.dev.hf.androidclient.fragment.SearchFragment;
+import org.coreocto.dev.hf.androidclient.fragment.SettingsFragment;
+import org.coreocto.dev.hf.androidclient.fragment.TestFragment;
+import org.coreocto.dev.hf.androidclient.fragment.UploadFragment;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.ChartResultFragment;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItem;
 import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemFragment;
@@ -53,7 +56,6 @@ import java.util.List;
 
 public class NavDwrActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
-        AddFragment.OnFragmentInteractionListener,
         SearchFragment.OnFragmentInteractionListener,
         TestFragment.OnFragmentInteractionListener,
         CryptoTestItemFragment.OnListFragmentInteractionListener,
@@ -107,50 +109,69 @@ public class NavDwrActivity extends AppCompatActivity
         return getSupportFragmentManager().findFragmentById(R.id.content_view);
     }
 
-    public Fragment goToFragment(int id, boolean addToBackStack) {
+    public Fragment replaceFragment(int id, boolean addToBackStack) {
 
         // Create a new fragment and specify the fragment to show based on nav item clicked
         Fragment fragment = null;
-        Class fragmentClass = null;
+        String fragmentTag = null;
 
         if (fab.getVisibility() != View.INVISIBLE) {
             fab.setVisibility(View.INVISIBLE);
         }
 
+        FragmentManager fragmentManager = getSupportFragmentManager();
+
         if (id == R.id.nav_settings) {
-            fragmentClass = SettingsFragment.class;
+            fragmentTag = TAG_SETTINGS_FRAGMENT;
+            fragment = fragmentManager.findFragmentByTag(fragmentTag);
+            if (fragment == null) {
+                fragment = new SettingsFragment();
+            }
         } else if (id == R.id.nav_search) {
-            fragmentClass = SearchFragment.class;
-        } else if (id == R.id.nav_add) {
-            fragmentClass = AddFragment.class;
+            fragmentTag = TAG_SEARCH_FRAGMENT;
+            fragment = fragmentManager.findFragmentByTag(fragmentTag);
+            if (fragment == null) {
+                fragment = new SearchFragment();
+            }
         }
 //        else if (id == R.id.nav_log) {
 //            fragmentClass = LogFragment.class;
 //        }
         else if (id == R.id.nav_test) {
-            fragmentClass = TestFragment.class;
+            fragmentTag = TAG_TEST_FRAGMENT;
+            fragment = fragmentManager.findFragmentByTag(fragmentTag);
+            if (fragment == null) {
+                fragment = new TestFragment();
+            }
         } else if (id == R.id.nav_crypto_test) {
-            fragmentClass = CryptoTestItemFragment.class;
+            fragmentTag = TAG_CRYPTO_TEST_FRAGMENT;
+            fragment = fragmentManager.findFragmentByTag(fragmentTag);
+            if (fragment == null) {
+                fragment = new CryptoTestItemFragment();
+            }
             fab.setVisibility(View.VISIBLE);
         } else if (id == AppConstants.FRAGMENT_CHART_RESULT) {
-            fragmentClass = ChartResultFragment.class;
+            fragmentTag = TAG_CHART_RESULT_FRAGMENT;
+            fragment = fragmentManager.findFragmentByTag(fragmentTag);
+            if (fragment == null) {
+                fragment = new ChartResultFragment();
+            }
         } else if (id == R.id.nav_upload) {
-            fragmentClass = UploadFragment.class;
-        }
-
-        try {
-            fragment = (Fragment) fragmentClass.newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
+            fragmentTag = TAG_UPLOAD_FRAGMENT;
+            fragment = fragmentManager.findFragmentByTag(fragmentTag);
+            if (fragment == null) {
+                fragment = new UploadFragment();
+            }
         }
 
         if (fragment == null) {
-            Log.e("error", "fragment is null, please check");
+            Log.e(TAG, "fragment is null, please check");
+        } else {
+            // Insert the fragment by replacing any existing fragment
+            fragmentManager.beginTransaction()//.add(R.id.content_view, fragment)
+                    .replace(R.id.content_view, fragment, fragmentTag)
+                    .commit();
         }
-
-        // Insert the fragment by replacing any existing fragment
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.content_view, fragment).commit();
 
         return fragment;
     }
@@ -159,6 +180,7 @@ public class NavDwrActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nav_dwr);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -222,18 +244,19 @@ public class NavDwrActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        //select the first fragment
-        this.onNavigationItemSelected(navigationView.getMenu().getItem(0));
+        if (savedInstanceState==null) {
+            //select the first fragment
+            this.onNavigationItemSelected(navigationView.getMenu().getItem(0));
 
-        SharedPreferences appPref = PreferenceManager.getDefaultSharedPreferences(NavDwrActivity.this);
+            SharedPreferences appPref = PreferenceManager.getDefaultSharedPreferences(NavDwrActivity.this);
 
-        //load existing settings
-        AppSettings appSettings = AppSettings.getInstance();
-        appSettings.setAppPref(appPref);
-        appSettings.setGson(new Gson());
+            //load existing settings
+            AppSettings appSettings = AppSettings.getInstance();
+            appSettings.setAppPref(appPref);
+            appSettings.setGson(new Gson());
 
-        String key1 = appPref.getString(AppConstants.PREF_CLIENT_KEY1, null);
-        String key2 = appPref.getString(AppConstants.PREF_CLIENT_KEY2, null);
+            String key1 = appPref.getString(AppConstants.PREF_CLIENT_KEY1, null);
+            String key2 = appPref.getString(AppConstants.PREF_CLIENT_KEY2, null);
 
 //        String key3 = appPref.getString(AppConstants.PREF_CLIENT_KEY3, null);
 //        String key4 = appPref.getString(AppConstants.PREF_CLIENT_KEY4, null);
@@ -241,52 +264,52 @@ public class NavDwrActivity extends AppCompatActivity
 //        String keyC = appPref.getString(AppConstants.PREF_CLIENT_KEYC, null);
 //        String keyL = appPref.getString(AppConstants.PREF_CLIENT_KEYL, null);
 
-        boolean statEnabled = appPref.getBoolean(AppConstants.PREF_SERVER_RPT_STAT, true);
+            boolean statEnabled = appPref.getBoolean(AppConstants.PREF_SERVER_RPT_STAT, true);
 
-        TraceAspect.setEnabled(statEnabled);
+            TraceAspect.setEnabled(statEnabled);
 
-        boolean dataProtectEnabled = appPref.getBoolean(AppConstants.PREF_CLIENT_DATA_PROTECT, true);
+            boolean dataProtectEnabled = appPref.getBoolean(AppConstants.PREF_CLIENT_DATA_PROTECT, true);
 
-        ILogger debugLogger = new ILogger() {
-            @Override
-            public void log(String s, String s1) {
-                Log.d(s, s1);
-            }
-        };
+            ILogger debugLogger = new ILogger() {
+                @Override
+                public void log(String s, String s1) {
+                    Log.d(s, s1);
+                }
+            };
 
-        IBase64 base64 = new AndroidBase64Impl();
+            IBase64 base64 = new AndroidBase64Impl();
 
-        Registry registry = new Registry();
-        registry.setBase64(base64);
-        registry.setHashFunc(new AndroidMd5Impl());
-        registry.setLogger(debugLogger);
-        appSettings.setRegistry(registry);
+            Registry registry = new Registry();
+            registry.setBase64(base64);
+            registry.setHashFunc(new AndroidMd5Impl());
+            registry.setLogger(debugLogger);
+            appSettings.setRegistry(registry);
 
-        SuiseUtil suiseUtil = new SuiseUtil(registry);
+            SuiseUtil suiseUtil = new SuiseUtil();
 //        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new NativeAes128CbcImpl());    //there are memory leak problem when using the native aes impl, i will fix it later
 
-        SuiseClientW suiseClient = new SuiseClientW(registry, suiseUtil);
-        VasstClientW vasstClient = new VasstClientW(registry);
-        Chlh2ClientW chlh2Client = new Chlh2ClientW(base64);
+            SuiseClientW suiseClient = new SuiseClientW(suiseUtil, base64);
+            VasstClientW vasstClient = new VasstClientW(base64);
+            Chlh2ClientW chlh2Client = new Chlh2ClientW(base64);
 
 //        McesClient mcesClient = new McesClient(base64);
 
-        suiseClient.setDataProtected(dataProtectEnabled);
-        vasstClient.setDataProtected(dataProtectEnabled);
+            suiseClient.setDataProtected(dataProtectEnabled);
+            vasstClient.setDataProtected(dataProtectEnabled);
 
-        if (key1!=null && !key1.isEmpty()){
-            byte[] key1Bytes = registry.getBase64().decodeToByteArray(key1);
-            suiseClient.setKey1(key1Bytes);
-            vasstClient.setSecretKey(key1Bytes);
+            if (key1 != null && !key1.isEmpty()) {
+                byte[] key1Bytes = base64.decodeToByteArray(key1);
+                suiseClient.setKey1(key1Bytes);
+                vasstClient.setSecretKey(key1Bytes);
 //            mcesClient.setK1(key1Bytes);
-            chlh2Client.setSecretKey(key1Bytes);
-        }
+                chlh2Client.setSecretKey(key1Bytes);
+            }
 
-        if (key2!=null && !key2.isEmpty()){
-            byte[] key2Bytes = registry.getBase64().decodeToByteArray(key2);
-            suiseClient.setKey2(key2Bytes);
+            if (key2 != null && !key2.isEmpty()) {
+                byte[] key2Bytes = base64.decodeToByteArray(key2);
+                suiseClient.setKey2(key2Bytes);
 //            mcesClient.setK2(key2Bytes);
-        }
+            }
 
 //        if (key3!=null && !key3.isEmpty()){
 //            byte[] key3Bytes = registry.getBase64().decodeToByteArray(key3);
@@ -313,21 +336,22 @@ public class NavDwrActivity extends AppCompatActivity
 //            mcesClient.setKl(keyLBytes);
 //        }
 
-        appSettings.setSuiseClient(suiseClient);
-        appSettings.setVasstClient(vasstClient);
+            appSettings.setSuiseClient(suiseClient);
+            appSettings.setVasstClient(vasstClient);
 //        appSettings.setMcesClient(mcesClient);
-        appSettings.setChlh2Client(chlh2Client);
-        //end
+            appSettings.setChlh2Client(chlh2Client);
+            //end
 
 //        byte[] defaultIv = new byte[16];
 //        appSettings.getSuiseClient().setIv1(defaultIv);
 //        appSettings.getSuiseClient().setIv2(defaultIv);
 //        appSettings.getVasstClient().setIv(defaultIv);
 
-        DatabaseHelper databaseHelper = new DatabaseHelper(this, AppConstants.LOCAL_APP_DB, null, 1);
-        appSettings.setDatabaseHelper(databaseHelper);
+            DatabaseHelper databaseHelper = new DatabaseHelper(this, AppConstants.LOCAL_APP_DB, null, 1);
+            appSettings.setDatabaseHelper(databaseHelper);
 
-        this.signIn();
+            this.signIn();
+        }
     }
 
     /**
@@ -382,12 +406,19 @@ public class NavDwrActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+    private static final String TAG_SETTINGS_FRAGMENT = "SettingsFragment";
+    private static final String TAG_SEARCH_FRAGMENT = "SearchFragment";
+    private static final String TAG_TEST_FRAGMENT = "TestFragment";
+    private static final String TAG_CRYPTO_TEST_FRAGMENT = "CryptoTestItemFragment";
+    private static final String TAG_CHART_RESULT_FRAGMENT = "ChartResultFragment";
+    private static final String TAG_UPLOAD_FRAGMENT = "UploadFragment";
+
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        this.goToFragment(id, false);
+        this.replaceFragment(id, false);
 
         // Highlight the selected item has been done by NavigationView
         item.setChecked(true);

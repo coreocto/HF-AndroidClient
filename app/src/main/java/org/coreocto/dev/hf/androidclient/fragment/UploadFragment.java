@@ -32,6 +32,7 @@ import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.bean.UploadItem;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5BcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5FcImpl;
+import org.coreocto.dev.hf.androidclient.crypto.HmacMd5Impl;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.androidclient.parser.DocFileParserImpl;
 import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
@@ -49,6 +50,7 @@ import org.coreocto.dev.hf.clientlib.sse.vasst.VasstClient;
 import org.coreocto.dev.hf.commonlib.Constants;
 import org.coreocto.dev.hf.commonlib.crypto.IByteCipher;
 import org.coreocto.dev.hf.commonlib.crypto.IFileCipher;
+import org.coreocto.dev.hf.commonlib.crypto.IKeyedHashFunc;
 import org.coreocto.dev.hf.commonlib.sse.chlh.Index;
 import org.coreocto.dev.hf.commonlib.sse.suise.bean.AddTokenResult;
 import org.coreocto.dev.hf.commonlib.sse.vasst.bean.TermFreq;
@@ -63,12 +65,13 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class UploadFragment extends Fragment {
     private static final ExecutorService execService = Executors.newSingleThreadExecutor();
     private static final String TAG = "UploadFragment";
 
-    private AddFragment.OnFragmentInteractionListener mListener = null;
+    private OnFragmentInteractionListener mListener = null;
     private ListView lvProcessQueue = null;
     private Button bAddFile = null;
     private Button bProcessQueue = null;
@@ -84,7 +87,7 @@ public class UploadFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @return A new instance of fragment AddFragment.
+     * @return A new instance of fragment UploadFragment.
      */
     // TODO: Rename and change types and number of parameters
     public static UploadFragment newInstance() {
@@ -92,6 +95,12 @@ public class UploadFragment extends Fragment {
             instance = new UploadFragment();
         }
         return instance;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList("processList", (ArrayList<? extends Parcelable>) processList);
     }
 
     private static UploadFragment instance = null;
@@ -104,6 +113,7 @@ public class UploadFragment extends Fragment {
     private GoogleSignInClient mGoogleSignInClient;
     private DriveClient mDriveClient;
     private DriveResourceClient mDriveResourceClient;
+    private OkHttpClient httpClient = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -124,7 +134,20 @@ public class UploadFragment extends Fragment {
         mDriveClient = ((NavDwrActivity) ctx).getDriveClient();
         mDriveResourceClient = ((NavDwrActivity) ctx).getDriveResourceClient();
 
-        this.processList = new ArrayList<>();
+        if (savedInstanceState != null) {
+            this.processList = savedInstanceState.getParcelableArrayList("processList");
+        } else {
+            this.processList = new ArrayList<>();
+
+            OkHttpClient.Builder builder = new OkHttpClient.Builder();
+            builder
+                    .connectTimeout(5, TimeUnit.MINUTES)
+                    .writeTimeout(5, TimeUnit.MINUTES)
+                    .readTimeout(5, TimeUnit.MINUTES)
+            ;
+
+            this.httpClient = builder.build();
+        }
 
         this.arrayAdapter = new UploadItemArrayAdapter(ctx, processList);
 
@@ -198,8 +221,6 @@ public class UploadFragment extends Fragment {
                     }
                 }
             };
-
-            private OkHttpClient httpClient = new OkHttpClient();
 
 //            private void pushStat(Object obj, String type) {
 
@@ -296,7 +317,7 @@ public class UploadFragment extends Fragment {
                                     }
 
                                 } catch (Exception e1) {
-                                    Log.e(TAG, "Unable to write file contents.");
+                                    Log.e(TAG, "Unable to write file contents.", e1);
                                 }
 
 //                                encStopWatch.stop();
@@ -491,7 +512,11 @@ public class UploadFragment extends Fragment {
 
                                             secureRandom.nextBytes(randomIvForFC);
 
-                                            if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
+                                            if (
+                                                    ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE) ||
+                                                            ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_2) ||
+                                                            ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_3)
+                                                    ) {
                                                 saveFileToDrive(docUri, docId, client, enableStatRpt, randomIvForFC);
                                             } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
                                                 saveFileToDrive(docUri, docId, vasstClient, enableStatRpt, randomIvForFC);
@@ -508,21 +533,29 @@ public class UploadFragment extends Fragment {
                                             Map<String, String> addInfo = new HashMap<>();
                                             addInfo.put("name", docId);
 
-                                            if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
+                                            if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE) ||
+                                                    ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_2) ||
+                                                    ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_3)) {
 
-                                                formBodyBuilder.add("st", Constants.SSE_TYPE_SUISE + "");
+                                                if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
+                                                    formBodyBuilder.add("st", Constants.SSE_TYPE_SUISE + "");
+                                                } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_2)) {
+                                                    formBodyBuilder.add("st", AppConstants.SSE_TYPE_SUISE_2 + "");
+                                                } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_3)) {
+                                                    formBodyBuilder.add("st", AppConstants.SSE_TYPE_SUISE_3 + "");
+                                                }
 
-                                                // begin of create search token
-//                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
-//                                                adStopWatch.start();
-
-                                                byte[] iv = new byte[16];
 //                                                new SecureRandom().nextBytes(iv);
 
-                                                IByteCipher byteCipher = new AesCbcPkcs5BcImpl(client.getKey1(), iv);
+                                                IKeyedHashFunc keyedHashFunc = new HmacMd5Impl();
+
+                                                Random random = new SecureRandom();
+
+                                                boolean includePrefix = ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_2) || ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_3);
+                                                boolean includeSuffix = ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_3);
 
                                                 // the token file
-                                                AddTokenResult addTokenResult = client.AddToken(ctx.getContentResolver().openInputStream(docUri), false, docId, fileParser, byteCipher, addInfo);
+                                                AddTokenResult addTokenResult = client.AddToken(ctx.getContentResolver().openInputStream(docUri), includePrefix, includeSuffix, docId, fileParser, keyedHashFunc, random, addInfo);
 
 //                                                adStopWatch.stop();
 //                                                adStopWatch.setName(addTokenResult.getId());
@@ -537,14 +570,13 @@ public class UploadFragment extends Fragment {
 
 //                                            Log.d(TAG, "adStopWatch = " + adStopWatch.toString());
 
-                                                String token = gson.toJson(addTokenResult);
+                                                byte[] iv = new byte[16];
 
-//                                            Log.d(TAG, "token = " + token);
-//                                            Log.d(TAG, "docId = " + docId);
+                                                String token = gson.toJson(addTokenResult);
 
                                                 formBodyBuilder.add("token", token);
                                                 formBodyBuilder.add("docId", docId);
-                                                formBodyBuilder.add("weiv", base64.encodeToString(iv));
+//                                                formBodyBuilder.add("weiv", base64.encodeToString(iv)); //as we switched to HMAC now, this iv is no longer useful
                                             } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
 
                                                 formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
@@ -552,7 +584,10 @@ public class UploadFragment extends Fragment {
                                                 // TODO: need to think of a method to ensure same x when performing search
                                                 // current workaround, use the first byte of the secret key
 
-                                                byte x = vasstClient.getSecretKey()[0]; //(byte)(Math.random()*127);
+//                                                byte x = vasstClient.getSecretKey()[0]; //(byte)(Math.random()*127);
+
+//                                                Random random = new SecureRandom();
+                                                int x = vasstClient.getSecretKey()[0];
 
                                                 {
                                                     ContentValues values = new ContentValues();
@@ -589,7 +624,7 @@ public class UploadFragment extends Fragment {
 //                                                keyCipher4Mces.setK1Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK1(), iv));
 //                                                keyCipher4Mces.setK2Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK2(), iv));
 //
-//                                                keyCipher4Mces.setKeyedHashFunc(new HmacMd5());
+//                                                keyCipher4Mces.setKeyedHashFunc(new HmacMd5Impl());
 //
 //                                                keyCipher4Mces.setKdCipher(new AesCbcPkcs5BcImpl(mcesClient.getKd(), iv));
 //                                                keyCipher4Mces.setKcCipher(new AesCbcPkcs5BcImpl(mcesClient.getKc(), iv));
@@ -680,6 +715,7 @@ public class UploadFragment extends Fragment {
                                         httpClient.newCall(request).enqueue(new Callback() {
                                             @Override
                                             public void onFailure(Call call, IOException e) {
+                                                Log.e(TAG, "error when execute http request", e);
 //                                                uploadStopWatch.stop();
                                             }
 
@@ -687,7 +723,8 @@ public class UploadFragment extends Fragment {
                                             public void onResponse(Call call, okhttp3.Response response) throws IOException {
                                                 if (!response.isSuccessful()) {
                                                     // Handle the error
-                                                    Log.i(TAG, "error when executing http request");
+                                                    Log.e(TAG, "error when executing http request");
+                                                    Log.e(TAG, response.message());
                                                 } else {
                                                     Log.i(TAG, "http request ok");
                                                 }
@@ -839,8 +876,8 @@ public class UploadFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof AddFragment.OnFragmentInteractionListener) {
-            mListener = (AddFragment.OnFragmentInteractionListener) context;
+        if (context instanceof UploadFragment.OnFragmentInteractionListener) {
+            mListener = (UploadFragment.OnFragmentInteractionListener) context;
         } else {
             throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");

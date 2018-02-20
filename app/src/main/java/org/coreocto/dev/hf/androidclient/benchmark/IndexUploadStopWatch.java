@@ -1,5 +1,6 @@
 package org.coreocto.dev.hf.androidclient.benchmark;
 
+@Deprecated
 public class IndexUploadStopWatch extends StopWatch {
     protected long fileSize;
 

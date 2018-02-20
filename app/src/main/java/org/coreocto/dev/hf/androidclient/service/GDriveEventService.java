@@ -49,36 +49,40 @@ public class GDriveEventService extends DriveEventService {
 
         DriveResourceClient drvResClient = Drive.getDriveResourceClient(this, GoogleSignIn.getLastSignedInAccount(this));
 
-        // [START retrieve_metadata]
-        Task<Metadata> getMetadataTask = drvResClient.getMetadata(changeEvent.getDriveId().asDriveFile());
-        getMetadataTask
-                .addOnSuccessListener(
-                        new OnSuccessListener<Metadata>() {
-                            @Override
-                            public void onSuccess(Metadata metadata) {
-                                Log.d(TAG, metadata.getTitle());
-                                String docId = metadata.getTitle();
+        if (drvResClient != null) {
+            // [START retrieve_metadata]
+            Task<Metadata> getMetadataTask = drvResClient.getMetadata(changeEvent.getDriveId().asDriveFile());
+            getMetadataTask
+                    .addOnSuccessListener(
+                            new OnSuccessListener<Metadata>() {
+                                @Override
+                                public void onSuccess(Metadata metadata) {
+                                    Log.d(TAG, metadata.getTitle());
+                                    String docId = metadata.getTitle();
 
-                                //Log.d(TAG, "docId: " + docId);
-                                //Log.d(TAG, "onChange(), " + evt.getDriveId() + ", resourceId: " + evt.getDriveId().getResourceId());
+                                    //Log.d(TAG, "docId: " + docId);
+                                    //Log.d(TAG, "onChange(), " + evt.getDriveId() + ", resourceId: " + evt.getDriveId().getResourceId());
 
-                                {
-                                    ContentValues values = new ContentValues();
-                                    values.put("cremoteid", evt.getDriveId().encodeToString());
-                                    SQLiteDatabase db = databaseHelper.getWritableDatabase();
-                                    long affectedRows = db.update(AppConstants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
-                                    db.close();
-                                    Log.d(TAG, "affectedRows(update): " + affectedRows);
+                                    if (databaseHelper != null) {
+                                        ContentValues values = new ContentValues();
+                                        values.put("cremoteid", evt.getDriveId().encodeToString());
+                                        SQLiteDatabase db = databaseHelper.getWritableDatabase();
+                                        long affectedRows = db.update(AppConstants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
+                                        db.close();
+                                        Log.d(TAG, "affectedRows(update): " + affectedRows);
+                                    } else {
+                                        Log.d(TAG, "databaseHelper is null, cannot write entry to local database");
+                                    }
                                 }
-                            }
-                        })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.e(TAG, "Unable to retrieve metadata", e);
-                    }
-                });
-        // [END retrieve_metadata]
+                            })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.e(TAG, "Unable to retrieve metadata", e);
+                        }
+                    });
+            // [END retrieve_metadata]
+        }
     }
 
     @Override

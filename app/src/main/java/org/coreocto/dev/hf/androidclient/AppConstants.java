@@ -1,5 +1,7 @@
 package org.coreocto.dev.hf.androidclient;
 
+import org.coreocto.dev.hf.commonlib.Constants;
+
 public class AppConstants {
     public static final String EMPTY_STRING = "";
     public static final String SPACE = " ";
@@ -22,6 +24,8 @@ public class AppConstants {
     public static final String PREF_CLIENT_SSE_TYPE_VASST = "VASST16";
     //    public static final String PREF_CLIENT_SSE_TYPE_MCES = "MCES";
     public static final String PREF_CLIENT_SSE_TYPE_CHLH = "CHLH15";
+    public static final String PREF_CLIENT_SSE_TYPE_SUISE_2 = "SUISE2";
+    public static final String PREF_CLIENT_SSE_TYPE_SUISE_3 = "SUISE3";
 
     public static final String REQ_UPLOAD_URL = "upload";
     public static final String REQ_PING_URL = "ping";
@@ -51,4 +55,7 @@ public class AppConstants {
 
     public static final String FILE_EXT_ENCRYPTED = ".enc";
     public static final String FILE_EXT_DECRYPTED = ".txt";
+
+    public static final int SSE_TYPE_SUISE_2 = Constants.SSE_TYPE_SUISE - 1;    //suise + all keyword suffix search
+    public static final int SSE_TYPE_SUISE_3 = SSE_TYPE_SUISE_2 - 1;            //suise + all keyword prefix search
 }
