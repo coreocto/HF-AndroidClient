@@ -49,7 +49,7 @@ android {
         ndk {
             abiFilters 'armeabi-v7a'
         }
-        multiDexEnabled true
+//        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -76,6 +76,12 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        force 'com.google.code.findbugs:jsr305:1.3.9'   //this is a workaround for the Guava library, otherwise it wouldn't compile
+    }
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
@@ -94,18 +100,18 @@ dependencies {
     compile 'com.google.android.gms:play-services-auth:11.6.0'
     compile 'com.google.android.gms:play-services-drive:11.6.0'
     //compile 'com.google.android.gms:play-services:11.6.0'
-    compile 'com.github.coreocto:HF-ClientLib:a6810d0'
+    compile 'com.github.coreocto:HF-ClientLib:68709d8'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
     compile 'com.itextpdf:itextg:5.5.10'
-    // https://mvnrepository.com/artifact/commons-io/commons-io
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
 //    compile 'com.github.SUPERCILEX.poi-android:poi:3.17'
 
     testCompile 'junit:junit:4.12'
 
-    compile 'com.android.support:multidex:1.0.1'
+//    compile 'com.android.support:multidex:1.0.1'
 
-    // https://mvnrepository.com/artifact/org.textmining/tm-extractors
+    //compile 'com.google.guava:guava:23.6-android'
+
     // compile group: 'org.textmining', name: 'tm-extractors', version: '0.4'
     // DO NOT include tm-extractors here, it adds an additional dependency poi 2.5.1 which causes duplicate class error
     // Workaround: download the jar and put it into libs directory

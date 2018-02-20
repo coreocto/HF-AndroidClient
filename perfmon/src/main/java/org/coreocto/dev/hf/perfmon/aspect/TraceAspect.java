@@ -1,19 +1,18 @@
 package org.coreocto.dev.hf.perfmon.aspect;
 
 import android.util.Log;
-import com.google.gson.Gson;
 import okhttp3.*;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.coreocto.dev.hf.perfmon.internal.DebugLog;
 import org.coreocto.dev.hf.perfmon.internal.StopWatch;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Aspect representing the cross cutting-concern: Method and Constructor Tracing.
@@ -21,17 +20,23 @@ import java.util.Map;
 @Aspect
 public class TraceAspect {
 
-    public static final OkHttpClient httpClient = new OkHttpClient();
+    public static final OkHttpClient httpClient;
     public static final String REQ_STAT_URL = "stat";
-    public static final String PREF_SERVER_HOSTNAME = "http://coreocto.ddns.net:8080/";
-    public static final Gson GSON = new Gson();
-    private static final String POINTCUT_METHOD =
-            "execution(@org.coreocto.dev.hf.perfmon.annotation.DebugTrace * *(..))";
-    private static final String POINTCUT_CONSTRUCTOR =
-            "execution(@org.coreocto.dev.hf.perfmon.annotation.DebugTrace *.new(..))";
+    public static final String PREF_SERVER_HOSTNAME = "http://192.168.11.129:8080/";//158.132.9.225:8080/";
+    private static final String POINTCUT_METHOD = "execution(@org.coreocto.dev.hf.perfmon.annotation.PrefMon * *(..))";
+    private static final String POINTCUT_CONSTRUCTOR = "execution(@org.coreocto.dev.hf.perfmon.annotation.PrefMon *.new(..))";
     private static final String TAG = "TraceAspect";
-    private static final String SSE_CLIENT_SUISE = "SuiseClient";
-    private static final String SSE_CLIENT_VASST = "VasstClient";
+
+    static {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        builder
+                .connectTimeout(5, TimeUnit.MINUTES)
+                .writeTimeout(5, TimeUnit.MINUTES)
+                .readTimeout(5, TimeUnit.MINUTES)
+        ;
+
+        httpClient = builder.build();
+    }
 
     private static volatile boolean enabled = true;
 
@@ -63,22 +68,22 @@ public class TraceAspect {
     }
 
     @Pointcut(POINTCUT_METHOD)
-    public void methodAnnotatedWithDebugTrace() {
+    public void methodAnnotatedWithPrefMon() {
     }
 
     @Pointcut(POINTCUT_CONSTRUCTOR)
-    public void constructorAnnotatedDebugTrace() {
+    public void constructorAnnotatedPrefMon() {
     }
 
-    @Around("methodAnnotatedWithDebugTrace() || constructorAnnotatedDebugTrace()")
+    @Around("methodAnnotatedWithPrefMon() || constructorAnnotatedPrefMon()")
     public Object weaveJoinPoint(ProceedingJoinPoint joinPoint) throws Throwable {
-        MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-        String className = methodSignature.getDeclaringType().getSimpleName();
-        String methodName = methodSignature.getName();
+        MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature(); //signature of method
+        String className = methodSignature.getDeclaringType().getSimpleName(); //class name of method
+        String methodName = methodSignature.getName(); //the method name
 
         //find the parameter index of the docId
-        String[] paramNames = methodSignature.getParameterNames();
-        Object[] paramVals = joinPoint.getArgs();
+        String[] paramNames = methodSignature.getParameterNames(); //name of the parameters
+        Object[] paramVals = joinPoint.getArgs(); //data type of the paramters
 
         int addInfoIdx = -1;
         for (int i = 0; i < paramNames.length; i++) {
@@ -88,7 +93,11 @@ public class TraceAspect {
             }
         }
 
-        Map<String, String> addInfo = (Map<String, String>) paramVals[addInfoIdx];
+        Map<String, String> addInfo = null;
+
+        if (addInfoIdx != -1) {
+            addInfo = (Map<String, String>) paramVals[addInfoIdx];
+        }
 
         final StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -102,8 +111,10 @@ public class TraceAspect {
             String type = className + "." + methodName;
 
             JSONObject statJson = new JSONObject();
-            for (Map.Entry<String, String> entry : addInfo.entrySet()) {
-                statJson.put(entry.getKey(), entry.getValue());
+            if (addInfo != null) {
+                for (Map.Entry<String, String> entry : addInfo.entrySet()) {
+                    statJson.put(entry.getKey(), entry.getValue());
+                }
             }
             statJson.put("startTime", stopWatch.getStartTime());
             statJson.put("endTime", stopWatch.getEndTime());
@@ -119,6 +130,12 @@ public class TraceAspect {
                     .url(statUrl)
                     .post(requestBody)
                     .build();
+
+//            try (Response response = httpClient.newCall(request).execute()) {
+//                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+//
+//                System.out.println(response.body().string());
+//            }
 
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
@@ -138,7 +155,7 @@ public class TraceAspect {
                 }
             });
 
-            DebugLog.log(className, buildLogMessage(methodName, stopWatch.getTotalTimeMillis()));
+            Log.d(className, buildLogMessage(methodName, stopWatch.getTotalTimeMillis()));
         }
 
         return result;
