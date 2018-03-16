@@ -38,6 +38,7 @@ import org.coreocto.dev.hf.androidclient.parser.DocFileParserImpl;
 import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
+import org.coreocto.dev.hf.androidclient.util.SystemUtil;
 import org.coreocto.dev.hf.androidclient.view.UploadItemArrayAdapter;
 import org.coreocto.dev.hf.androidclient.wrapper.Chlh2ClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
@@ -222,37 +223,6 @@ public class UploadFragment extends Fragment {
                 }
             };
 
-//            private void pushStat(Object obj, String type) {
-
-//                final String statUrl = appSettings.getAppPref().getString(AppConstants.PREF_SERVER_HOSTNAME, null) + "/" + AppConstants.REQ_STAT_URL;
-//
-//                RequestBody requestBody = new FormBody.Builder()
-//                        .add("data", gson.toJson(obj))
-//                        .add("type", type).build();
-//
-//                Request request = new Request.Builder()
-//                        .url(statUrl)
-//                        .post(requestBody)
-//                        .build();
-//
-//                httpClient.newCall(request).enqueue(new Callback() {
-//                    @Override
-//                    public void onFailure(Call call, IOException e) {
-//                        Log.e(TAG, "error when pushing statistics to server");
-//                    }
-//
-//                    @Override
-//                    public void onResponse(Call call, okhttp3.Response response) throws IOException {
-//                        if (!response.isSuccessful()) {
-//                            // Handle the error
-//                            Log.e(TAG, "response.isSuccessful() = false");
-//                        }
-//
-//                        response.close();
-//                    }
-//                });
-//            }
-
             private long getFileSize(Uri docUri) {
                 long result = -1;
                 if (docUri.getScheme() != null && docUri.getScheme().startsWith("content")) {
@@ -281,9 +251,6 @@ public class UploadFragment extends Fragment {
                                 DriveContents contents = createContentsTask.getResult();
                                 OutputStream outputStream = contents.getOutputStream();
 
-//                                final DocEncryptStopWatch encStopWatch = new DocEncryptStopWatch(docId, getFileSize(docUri));
-//                                encStopWatch.start();
-
                                 long curFileSz = getFileSize(docUri);
 
                                 Map<String, String> addInfo = new HashMap<>();
@@ -304,14 +271,7 @@ public class UploadFragment extends Fragment {
                                         VasstClientW vasstClientW = (VasstClientW) sseClient;
                                         fileCipher = new AesCbcPkcs5FcImpl(vasstClientW.getSecretKey(), randomIv);
                                         vasstClientW.Encrypt(inputStream, outputStream, fileCipher, addInfo);
-                                    }
-//                                    else if (sseClient instanceof McesClient) {
-//                                        //mces scheme does not mention about the file encryption part
-//                                        //so the encryption will take place here
-//                                        fileCipher = new AesCbcPkcs5FcImpl(((McesClient) sseClient).getK1(), randomIv);
-//                                        fileCipher.encrypt(inputStream, outputStream);
-//                                    }
-                                    else if (sseClient instanceof Chlh2Client) {
+                                    } else if (sseClient instanceof Chlh2Client) {
                                         fileCipher = new AesCbcPkcs5FcImpl(((Chlh2Client) sseClient).getSecretKey(), randomIv);
                                         fileCipher.encrypt(inputStream, outputStream);
                                     }
@@ -319,12 +279,6 @@ public class UploadFragment extends Fragment {
                                 } catch (Exception e1) {
                                     Log.e(TAG, "Unable to write file contents.", e1);
                                 }
-
-//                                encStopWatch.stop();
-//
-//                                if (enableStatRpt) {
-//                                    pushStat(encStopWatch, AppConstants.SW_TYPE_ENCRYPT);
-//                                }
 
                                 if (inputStream != null) {
                                     try {
@@ -345,44 +299,29 @@ public class UploadFragment extends Fragment {
                                 MetadataChangeSet changeSet = new MetadataChangeSet.Builder()
                                         .setMimeType("application/octet-stream").setTitle(docId).build();
 
-                                return mDriveResourceClient.createFile(parent, changeSet, contents);
+                                ExecutionOptions execOpts = new ExecutionOptions.Builder()
+                                        .setNotifyOnCompletion(true)
+                                        .build();
+
+                                return mDriveResourceClient.createFile(parent, changeSet, contents, execOpts);
                             }
                         }).addOnSuccessListener(activity, new OnSuccessListener<DriveFile>() {
-                    @Override
-                    public void onSuccess(final DriveFile driveFile) {
-                        Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
+                            @Override
+                            public void onSuccess(final DriveFile driveFile) {
+                                Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
 
-//                                mDriveResourceClient.addChangeListener(driveFile, new OnChangeListener() {
-//
-//                                    /**
-//                                     * A listener to handle file change events.
-//                                     */
+//                                mDriveResourceClient.addChangeSubscription(driveFile).addOnSuccessListener(new OnSuccessListener<Void>() {
 //                                    @Override
-//                                    public void onChange(ChangeEvent changeEvent) {
-//                                        Log.d(TAG, "docId: " + docId);
-//                                        Log.d(TAG, "onChange(), " + changeEvent.getDriveId() + ", resourceId: " + changeEvent.getDriveId().getResourceId());
-//
-//                                        {
-//                                            ContentValues values = new ContentValues();
-//                                            values.put("cremoteid", changeEvent.getDriveId().encodeToString());
-//                                            long affectedRows = databaseHelper.getWritableDatabase().update(AppConstants.TABLE_REMOTE_DOCS, values, "cremotename=?", new String[]{docId});
-//                                            Log.d(TAG, "affectedRows(update): " + affectedRows);
-//                                        }
+//                                    public void onSuccess(Void aVoid) {
+//                                        Log.d(TAG, "changed listener on " + driveFile.getDriveId() + " subscribed");
 //                                    }
 //                                });
-
-                        mDriveResourceClient.addChangeSubscription(driveFile).addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                Log.d(TAG, "subscribed");
                             }
-                        });
-                    }
-                })
+                        })
                         .addOnFailureListener(activity, new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                Log.e(TAG, "unable to create file", e);
+                                Log.e(TAG, "failed to upload document to google drive", e);
                             }
                         });
 
@@ -418,7 +357,6 @@ public class UploadFragment extends Fragment {
 
                 final SuiseClientW client = appSettings.getSuiseClient();
                 final VasstClientW vasstClient = appSettings.getVasstClient();
-//                final McesClient mcesClient = appSettings.getMcesClient();
                 final Chlh2ClientW chlh2Client = appSettings.getChlh2Client();
 
                 final String extStore = Environment.getExternalStorageDirectory().toString();
@@ -506,10 +444,6 @@ public class UploadFragment extends Fragment {
                                                 Log.d(TAG, "insert: id = " + id);
                                             }
 
-                                            // moved measure code into saveFileToDrive
-                                            //final DocEncryptStopWatch encStopWatch = new DocEncryptStopWatch(docId, srcFile.length());
-                                            //encStopWatch.start();
-
                                             secureRandom.nextBytes(randomIvForFC);
 
                                             if (
@@ -520,11 +454,7 @@ public class UploadFragment extends Fragment {
                                                 saveFileToDrive(docUri, docId, client, enableStatRpt, randomIvForFC);
                                             } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
                                                 saveFileToDrive(docUri, docId, vasstClient, enableStatRpt, randomIvForFC);
-                                            }
-//                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)){
-//                                                saveFileToDrive(docUri, docId, mcesClient, enableStatRpt, randomIvForFC);
-//                                            }
-                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                                            } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
                                                 saveFileToDrive(docUri, docId, chlh2Client, enableStatRpt, randomIvForFC);
                                             }
 
@@ -545,8 +475,6 @@ public class UploadFragment extends Fragment {
                                                     formBodyBuilder.add("st", AppConstants.SSE_TYPE_SUISE_3 + "");
                                                 }
 
-//                                                new SecureRandom().nextBytes(iv);
-
                                                 IKeyedHashFunc keyedHashFunc = new HmacMd5Impl();
 
                                                 Random random = new SecureRandom();
@@ -557,22 +485,13 @@ public class UploadFragment extends Fragment {
                                                 // the token file
                                                 AddTokenResult addTokenResult = client.AddToken(ctx.getContentResolver().openInputStream(docUri), includePrefix, includeSuffix, docId, fileParser, keyedHashFunc, random, addInfo);
 
-//                                                adStopWatch.stop();
-//                                                adStopWatch.setName(addTokenResult.getId());
-//                                                adStopWatch.setWordCount(addTokenResult.getC().size());
-
-                                                //docId = addTokenResult.getId();
-
-//                                                if (enableStatRpt) {
-//                                                    pushStat(adStopWatch, AppConstants.SW_TYPE_ADD_TOKEN);
-//                                                }
-                                                // end of create search token
-
-//                                            Log.d(TAG, "adStopWatch = " + adStopWatch.toString());
-
-                                                byte[] iv = new byte[16];
-
                                                 String token = gson.toJson(addTokenResult);
+
+                                                addTokenResult.getC().clear();
+                                                addTokenResult.getX().clear();
+                                                addTokenResult = null;
+
+                                                SystemUtil.freeMemory();
 
                                                 formBodyBuilder.add("token", token);
                                                 formBodyBuilder.add("docId", docId);
@@ -582,12 +501,8 @@ public class UploadFragment extends Fragment {
                                                 formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
 
                                                 // TODO: need to think of a method to ensure same x when performing search
-                                                // current workaround, use the first byte of the secret key
-
-//                                                byte x = vasstClient.getSecretKey()[0]; //(byte)(Math.random()*127);
-
-//                                                Random random = new SecureRandom();
-                                                int x = vasstClient.getSecretKey()[0];
+                                                Random random = new SecureRandom();
+                                                int x = vasstClient.getSecretKey()[0];  //random.nextInt();
 
                                                 {
                                                     ContentValues values = new ContentValues();
@@ -598,95 +513,23 @@ public class UploadFragment extends Fragment {
 
                                                 BigDecimal x_in_bd = BigDecimal.valueOf(x);
 
-//                                                final AddTokenStopWatch adStopWatch = new AddTokenStopWatch();
-//                                                adStopWatch.start();
-
                                                 byte[] iv = new byte[16];
+
                                                 IByteCipher byteCipher = new AesCbcPkcs5BcImpl(vasstClient.getSecretKey(), iv);
 
                                                 TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x_in_bd, fileParser, byteCipher, addInfo);
-
-//                                                adStopWatch.stop();
-//                                                adStopWatch.setName(docId);
-//                                                adStopWatch.setWordCount(termFreq.getTerms().size());   //this is not the actual size, will modify it later
 
                                                 String terms = gson.toJson(termFreq);
 
                                                 formBodyBuilder.add("terms", terms);
                                                 formBodyBuilder.add("docId", docId);
                                                 formBodyBuilder.add("weiv", base64.encodeToString(iv));
-                                            }
-//                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)){
-//                                                formBodyBuilder.add("st", Constants.SSE_TYPE_MCES + "");
-//
-//                                                byte[] iv = new byte[16];
-//                                                KeyCipher keyCipher4Mces = new KeyCipher();
-//                                                keyCipher4Mces.setK1Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK1(), iv));
-//                                                keyCipher4Mces.setK2Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK2(), iv));
-//
-//                                                keyCipher4Mces.setKeyedHashFunc(new HmacMd5Impl());
-//
-//                                                keyCipher4Mces.setKdCipher(new AesCbcPkcs5BcImpl(mcesClient.getKd(), iv));
-//                                                keyCipher4Mces.setKcCipher(new AesCbcPkcs5BcImpl(mcesClient.getKc(), iv));
-//                                                keyCipher4Mces.setKlCipher(new AesCbcPkcs5BcImpl(mcesClient.getKl(), iv));
-//
-//                                                keyCipher4Mces.setByteCipher(new AesCbcPkcs5BcImpl());
-//
-//                                                List<String> keywords = fileParser.getText(ctx.getContentResolver().openInputStream(docUri));
-//
-//                                                int keywordSize = keywords.size();
-//
-//                                                for (int z=0;z<keywordSize;z++){
-//                                                    String keyword = keywords.get(z);
-//                                                    CT cipherText = mcesClient.Enc(keyword,keyCipher4Mces);
-//
-//                                                    //as it would take to much memory to create all index at once
-//                                                    //i tried to minimize the memory footprint by send the ct to server each time
-//                                                    String cipherText_in_json = gson.toJson(cipherText);
-//
-//                                                    FormBody.Builder newForm = formBodyBuilder;
-//                                                    newForm = newForm.add("ct", cipherText_in_json);
-//                                                    newForm = newForm.add("docId", docId);
-//                                                    newForm = newForm.add("weiv", base64.encodeToString(iv));
-//
-//                                                    RequestBody newRequestBody = newForm.build();
-//                                                    Request newRequest = new Request.Builder()
-//                                                            .url(url)
-//                                                            .post(newRequestBody)
-//                                                            .build();
-//
-//                                                    httpClient.newCall(newRequest).enqueue(new Callback() {
-//                                                        @Override
-//                                                        public void onFailure(Call call, IOException e) {
-//                                                        }
-//
-//                                                        @Override
-//                                                        public void onResponse(Call call, okhttp3.Response response) throws IOException {
-//                                                            if (!response.isSuccessful()) {
-//                                                                // Handle the error
-//                                                                Log.i(TAG, "error when executing http request");
-//                                                            } else {
-//                                                                Log.i(TAG, "http request ok");
-//                                                            }
-//
-//                                                            response.body().close();
-//                                                        }
-//                                                    });
-//                                                }
-//
-//
-////                                                List<CT> cipherText = mcesClient.Enc(ctx.getContentResolver().openInputStream(docUri), keyCipher4Mces, fileParser);
-////
-////                                                String cipherText_in_json = gson.toJson(cipherText);
-//
-////                                                formBodyBuilder = formBodyBuilder.add("ct", cipherText_in_json);
-//                                                formBodyBuilder = formBodyBuilder.add("docId", docId);
-//                                                formBodyBuilder = formBodyBuilder.add("weiv", base64.encodeToString(iv));
-//                                            }
-                                            else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                                            } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
                                                 formBodyBuilder.add("st", Constants.SSE_TYPE_CHLH + "");
 
                                                 byte[] iv = new byte[16];
+                                                new SecureRandom().nextBytes(iv);
+
                                                 IByteCipher byteCipher = new AesCbcPkcs5BcImpl(chlh2Client.getSecretKey(), iv);
 
                                                 Index index = chlh2Client.BuildIndex(ctx.getContentResolver().openInputStream(docUri), fileParser, docId, byteCipher, addInfo);
@@ -710,13 +553,10 @@ public class UploadFragment extends Fragment {
                                                 .post(requestBody)
                                                 .build();
 
-//                                        final IndexUploadStopWatch uploadStopWatch = new IndexUploadStopWatch(docId, 0);
-
                                         httpClient.newCall(request).enqueue(new Callback() {
                                             @Override
                                             public void onFailure(Call call, IOException e) {
                                                 Log.e(TAG, "error when execute http request", e);
-//                                                uploadStopWatch.stop();
                                             }
 
                                             @Override
@@ -729,17 +569,9 @@ public class UploadFragment extends Fragment {
                                                     Log.i(TAG, "http request ok");
                                                 }
 
-//                                                uploadStopWatch.stop();
-
                                                 response.body().close();
-
-//                                                if (enableStatRpt) {
-//                                                    pushStat(uploadStopWatch, "encrypt");
-//                                                }
                                             }
                                         });
-
-//                                        uploadStopWatch.start();
 
                                         dismissDialogHandler.sendEmptyMessage(i);
 
@@ -748,7 +580,6 @@ public class UploadFragment extends Fragment {
                                     } catch (Exception e) {
                                         Log.e(TAG, "error when uploading documents/creating index", e);
                                         uploadItem.setStatus(UploadItem.Status.ERROR);
-
                                     } finally {
                                         activity.runOnUiThread(new Runnable() {
                                             @Override
@@ -762,7 +593,6 @@ public class UploadFragment extends Fragment {
 
                                 //if the code above throw exception, the dialog would not close. so we force close it here
                                 progressDialog.dismiss();
-
                             }
                         }
                 );
@@ -835,13 +665,6 @@ public class UploadFragment extends Fragment {
             // provided to this method as a parameter.
             // Pull that URI using resultData.getData().
             if (resultData != null) {
-//                Uri uri = resultData.getData();
-//                Log.i(TAG, "Uri: " + uri.toString());
-//                //showImage(uri);
-//
-//                //processList.add(new File(uri.getPath()).getAbsolutePath());
-//                processList.add(uri);
-//                arrayAdapter.notifyDataSetChanged();
 
                 ClipData clipData = resultData.getClipData();
                 if (clipData != null) {

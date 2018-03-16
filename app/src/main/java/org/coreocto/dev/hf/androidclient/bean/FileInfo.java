@@ -4,16 +4,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class FileInfo implements Parcelable {
-    public String name;
-    public int type;
-    private String feiv;
-
-    protected FileInfo(Parcel in) {
-        name = in.readString();
-        type = in.readInt();
-        feiv = in.readString();
-    }
-
     public static final Creator<FileInfo> CREATOR = new Creator<FileInfo>() {
         @Override
         public FileInfo createFromParcel(Parcel in) {
@@ -25,6 +15,25 @@ public class FileInfo implements Parcelable {
             return new FileInfo[size];
         }
     };
+    private String name;
+    private int type;
+    private String feiv;
+    private String weiv;
+
+    protected FileInfo(Parcel in) {
+        name = in.readString();
+        type = in.readInt();
+        feiv = in.readString();
+        weiv = in.readString();
+    }
+
+    public String getWeiv() {
+        return weiv;
+    }
+
+    public void setWeiv(String weiv) {
+        this.weiv = weiv;
+    }
 
     public String getFeiv() {
         return feiv;
@@ -60,5 +69,6 @@ public class FileInfo implements Parcelable {
         dest.writeString(name);
         dest.writeInt(type);
         dest.writeString(feiv);
+        dest.writeString(weiv);
     }
 }

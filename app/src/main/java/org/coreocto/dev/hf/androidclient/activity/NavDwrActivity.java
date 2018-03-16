@@ -1,12 +1,12 @@
 package org.coreocto.dev.hf.androidclient.activity;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -19,29 +19,20 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.*;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveClient;
 import com.google.android.gms.drive.DriveResourceClient;
+import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
 import org.coreocto.dev.hf.androidclient.AppConstants;
 import org.coreocto.dev.hf.androidclient.R;
 import org.coreocto.dev.hf.androidclient.bean.AppSettings;
-import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkParam;
-import org.coreocto.dev.hf.androidclient.benchmark.BenchmarkTask;
-import org.coreocto.dev.hf.androidclient.crypto.AndroidMd5Impl;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.androidclient.fragment.SearchFragment;
 import org.coreocto.dev.hf.androidclient.fragment.SettingsFragment;
-import org.coreocto.dev.hf.androidclient.fragment.TestFragment;
 import org.coreocto.dev.hf.androidclient.fragment.UploadFragment;
-import org.coreocto.dev.hf.androidclient.fragment.cryptotest.ChartResultFragment;
-import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItem;
-import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemFragment;
-import org.coreocto.dev.hf.androidclient.fragment.cryptotest.CryptoTestItemRecyclerViewAdapter;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.wrapper.Chlh2ClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
@@ -49,17 +40,11 @@ import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
 import org.coreocto.dev.hf.commonlib.sse.suise.util.SuiseUtil;
 import org.coreocto.dev.hf.commonlib.util.IBase64;
 import org.coreocto.dev.hf.commonlib.util.ILogger;
-import org.coreocto.dev.hf.commonlib.util.Registry;
 import org.coreocto.dev.hf.perfmon.aspect.TraceAspect;
-
-import java.util.List;
 
 public class NavDwrActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         SearchFragment.OnFragmentInteractionListener,
-        TestFragment.OnFragmentInteractionListener,
-        CryptoTestItemFragment.OnListFragmentInteractionListener,
-        ChartResultFragment.OnFragmentInteractionListener,
         UploadFragment.OnFragmentInteractionListener {
 
     private static final String TAG = "NavDwrActivity";
@@ -95,19 +80,62 @@ public class NavDwrActivity extends AppCompatActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE_SIGN_IN) {
-            Log.i(TAG, "Signed in successfully.");
-            // Use the last signed in account here since it already have a Drive scope.
-            mDriveClient = Drive.getDriveClient(this, GoogleSignIn.getLastSignedInAccount(this));
-            // Build a drive resource client.
-            mDriveResourceClient = Drive.getDriveResourceClient(this, GoogleSignIn.getLastSignedInAccount(this));
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
         }
     }
 
-    private FloatingActionButton fab = null;
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
 
-    public Fragment getCurrentFragment() {
-        return getSupportFragmentManager().findFragmentById(R.id.content_view);
+        Context context = NavDwrActivity.this;
+
+        int failedCode = -1;
+
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+            // Signed in successfully, show authenticated UI.
+
+            // Use the last signed in account here since it already have a Drive scope.
+            mDriveClient = Drive.getDriveClient(context, account);
+            // Build a drive resource client.
+            mDriveResourceClient = Drive.getDriveResourceClient(context, account);
+
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w(TAG, "google sign in failed, status code=" + e.getStatusCode());
+            failedCode = e.getStatusCode();
+        }
+
+        if (failedCode > 0) {
+            if (failedCode == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
+                new AlertDialog.Builder(context)
+                        .setMessage("You must sign in your Google account to use this app.\nPlease try again.")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                signIn();
+                            }
+                        })
+                        .show();
+            } else {
+                new AlertDialog.Builder(context)
+                        .setTitle("Error")
+                        .setMessage("Sorry, we have some problem when signing you in.\nPlease try again later.")
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                finish();
+                            }
+                        })
+                        .show();
+            }
+
+        }
     }
+
+//    private FloatingActionButton fab = null;
 
     public Fragment replaceFragment(int id, boolean addToBackStack) {
 
@@ -115,9 +143,9 @@ public class NavDwrActivity extends AppCompatActivity
         Fragment fragment = null;
         String fragmentTag = null;
 
-        if (fab.getVisibility() != View.INVISIBLE) {
-            fab.setVisibility(View.INVISIBLE);
-        }
+//        if (fab != null && fab.getVisibility() != View.INVISIBLE) {
+//            fab.setVisibility(View.INVISIBLE);
+//        }
 
         FragmentManager fragmentManager = getSupportFragmentManager();
 
@@ -132,29 +160,6 @@ public class NavDwrActivity extends AppCompatActivity
             fragment = fragmentManager.findFragmentByTag(fragmentTag);
             if (fragment == null) {
                 fragment = new SearchFragment();
-            }
-        }
-//        else if (id == R.id.nav_log) {
-//            fragmentClass = LogFragment.class;
-//        }
-        else if (id == R.id.nav_test) {
-            fragmentTag = TAG_TEST_FRAGMENT;
-            fragment = fragmentManager.findFragmentByTag(fragmentTag);
-            if (fragment == null) {
-                fragment = new TestFragment();
-            }
-        } else if (id == R.id.nav_crypto_test) {
-            fragmentTag = TAG_CRYPTO_TEST_FRAGMENT;
-            fragment = fragmentManager.findFragmentByTag(fragmentTag);
-            if (fragment == null) {
-                fragment = new CryptoTestItemFragment();
-            }
-            fab.setVisibility(View.VISIBLE);
-        } else if (id == AppConstants.FRAGMENT_CHART_RESULT) {
-            fragmentTag = TAG_CHART_RESULT_FRAGMENT;
-            fragment = fragmentManager.findFragmentByTag(fragmentTag);
-            if (fragment == null) {
-                fragment = new ChartResultFragment();
             }
         } else if (id == R.id.nav_upload) {
             fragmentTag = TAG_UPLOAD_FRAGMENT;
@@ -184,56 +189,58 @@ public class NavDwrActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setVisibility(View.INVISIBLE);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Fragment currentFragment = getCurrentFragment();
-                if (currentFragment instanceof CryptoTestItemFragment) {
-                    CryptoTestItemRecyclerViewAdapter adapter = (CryptoTestItemRecyclerViewAdapter) ((CryptoTestItemFragment) currentFragment).getRecyclerView().getAdapter();
-                    if (adapter.getCheckedCount() == 0) {
-                        new AlertDialog.Builder(NavDwrActivity.this).setMessage("Please select at least one scheme!!")
-                                .setCancelable(false)
-                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
-                                        dialog.dismiss();
-                                    }
-                                }).create().show();
-
-                    } else {
-
-                        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(NavDwrActivity.this);
-                        String sRunCnt = settings.getString(AppConstants.PREF_CT_NUM_OF_EXEC, AppConstants.PREF_CT_DEFAULT_RUN_CNT);
-                        String sDataSize = settings.getString(AppConstants.PREF_CT_DATA_SIZE, AppConstants.PREF_CT_DEFAULT_DATA_SIZE);
-                        Boolean bAllocMem = settings.getBoolean(AppConstants.PREF_CT_ALLOC_MEM, false);
-                        Boolean bExplicitGc = settings.getBoolean(AppConstants.PREF_CT_EXPLICIT_GC, false);
-
-                        int runCnt = -1;
-                        int dataSize = -1;
-
-                        try {
-                            runCnt = Integer.parseInt(sRunCnt);
-                        } catch (NumberFormatException nfe) {
-                            Log.d(TAG, nfe.getMessage());
-                        }
-
-                        try {
-                            dataSize = Integer.parseInt(sDataSize);
-                        } catch (NumberFormatException nfe) {
-                            Log.d(TAG, nfe.getMessage());
-                        }
-
-                        BenchmarkParam param = new BenchmarkParam(dataSize, runCnt/*, bAllocMem, bExplicitGc*/);
-                        List<CryptoTestItem> itemList = adapter.getCheckedItems();
-                        for (CryptoTestItem item : itemList) {
-                            param.addTest(item.getSchemeName());
-                        }
-                        new BenchmarkTask(NavDwrActivity.this).execute(param);
-                    }
-                }
-            }
-        });
+        if (savedInstanceState == null) {
+//            fab = (FloatingActionButton) findViewById(R.id.fab);
+//            fab.setVisibility(View.INVISIBLE);
+//            fab.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//                    Fragment currentFragment = getCurrentFragment();
+//                    if (currentFragment instanceof CryptoTestItemFragment) {
+//                        CryptoTestItemRecyclerViewAdapter adapter = (CryptoTestItemRecyclerViewAdapter) ((CryptoTestItemFragment) currentFragment).getRecyclerView().getAdapter();
+//                        if (adapter.getCheckedCount() == 0) {
+//                            new AlertDialog.Builder(NavDwrActivity.this).setMessage("Please select at least one scheme!!")
+//                                    .setCancelable(false)
+//                                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//                                        public void onClick(DialogInterface dialog, int id) {
+//                                            dialog.dismiss();
+//                                        }
+//                                    }).create().show();
+//
+//                        } else {
+//
+//                            SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(NavDwrActivity.this);
+//                            String sRunCnt = settings.getString(AppConstants.PREF_CT_NUM_OF_EXEC, AppConstants.PREF_CT_DEFAULT_RUN_CNT);
+//                            String sDataSize = settings.getString(AppConstants.PREF_CT_DATA_SIZE, AppConstants.PREF_CT_DEFAULT_DATA_SIZE);
+//                            Boolean bAllocMem = settings.getBoolean(AppConstants.PREF_CT_ALLOC_MEM, false);
+//                            Boolean bExplicitGc = settings.getBoolean(AppConstants.PREF_CT_EXPLICIT_GC, false);
+//
+//                            int runCnt = -1;
+//                            int dataSize = -1;
+//
+//                            try {
+//                                runCnt = Integer.parseInt(sRunCnt);
+//                            } catch (NumberFormatException nfe) {
+//                                Log.d(TAG, nfe.getMessage());
+//                            }
+//
+//                            try {
+//                                dataSize = Integer.parseInt(sDataSize);
+//                            } catch (NumberFormatException nfe) {
+//                                Log.d(TAG, nfe.getMessage());
+//                            }
+//
+//                            BenchmarkParam param = new BenchmarkParam(dataSize, runCnt/*, bAllocMem, bExplicitGc*/);
+//                            List<CryptoTestItem> itemList = adapter.getCheckedItems();
+//                            for (CryptoTestItem item : itemList) {
+//                                param.addTest(item.getSchemeName());
+//                            }
+//                            new BenchmarkTask(NavDwrActivity.this).execute(param);
+//                        }
+//                    }
+//                }
+//            });
+        }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -244,7 +251,7 @@ public class NavDwrActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        if (savedInstanceState==null) {
+        if (savedInstanceState == null) {
             //select the first fragment
             this.onNavigationItemSelected(navigationView.getMenu().getItem(0));
 
@@ -279,18 +286,27 @@ public class NavDwrActivity extends AppCompatActivity
 
             IBase64 base64 = new AndroidBase64Impl();
 
-            Registry registry = new Registry();
-            registry.setBase64(base64);
-            registry.setHashFunc(new AndroidMd5Impl());
-            registry.setLogger(debugLogger);
-            appSettings.setRegistry(registry);
-
             SuiseUtil suiseUtil = new SuiseUtil();
-//        SuiseUtil suiseUtil = new SuiseUtil(new AndroidBase64Impl(), new AndroidMd5Impl(), new NativeAes128CbcImpl());    //there are memory leak problem when using the native aes impl, i will fix it later
+
+            String fprS = appPref.getString(AppConstants.PREF_CLIENT_CHLH_FPR, "0.1");
+            float fpr = 0.1f;
+            try {
+                fpr = Float.parseFloat(fprS);
+            } catch (NumberFormatException nfe) {
+                Log.d(TAG, "failed to parse floating point number", nfe);
+            }
+
+            String expectDocCntS = appPref.getString(AppConstants.PREF_CLIENT_CHLH_EXPECT_DOC_CNT, "1000");
+            int expectDocCnt = 1000;
+            try {
+                expectDocCnt = Integer.parseInt(expectDocCntS);
+            } catch (NumberFormatException nfe) {
+                Log.d(TAG, "failed to parse integer", nfe);
+            }
 
             SuiseClientW suiseClient = new SuiseClientW(suiseUtil, base64);
             VasstClientW vasstClient = new VasstClientW(base64);
-            Chlh2ClientW chlh2Client = new Chlh2ClientW(base64);
+            Chlh2ClientW chlh2Client = new Chlh2ClientW(base64, fpr, expectDocCnt);
 
 //        McesClient mcesClient = new McesClient(base64);
 
@@ -398,9 +414,20 @@ public class NavDwrActivity extends AppCompatActivity
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        if (id == R.id.action_signout) {
+            new AlertDialog.Builder(this)
+                    //.setIcon(android.R.drawable.ic_dialog_alert)
+                    .setTitle("Confirm Sign Out")
+                    .setMessage("Are you sure you want to sign out from this app?")
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            mGoogleSignInClient.signOut();
+                            finish();
+                        }
+                    })
+                    .setNegativeButton("No", null)
+                    .show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -408,9 +435,6 @@ public class NavDwrActivity extends AppCompatActivity
 
     private static final String TAG_SETTINGS_FRAGMENT = "SettingsFragment";
     private static final String TAG_SEARCH_FRAGMENT = "SearchFragment";
-    private static final String TAG_TEST_FRAGMENT = "TestFragment";
-    private static final String TAG_CRYPTO_TEST_FRAGMENT = "CryptoTestItemFragment";
-    private static final String TAG_CHART_RESULT_FRAGMENT = "ChartResultFragment";
     private static final String TAG_UPLOAD_FRAGMENT = "UploadFragment";
 
     @Override
@@ -432,11 +456,6 @@ public class NavDwrActivity extends AppCompatActivity
 
     @Override
     public void onFragmentInteraction(Uri uri) {
-
-    }
-
-    @Override
-    public void onListFragmentInteraction(CryptoTestItem item) {
 
     }
 }

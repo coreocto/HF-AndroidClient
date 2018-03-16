@@ -40,6 +40,12 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     private static final String TAG = "SettingsFragment";
     private CheckBoxPreference prefClientDataProtect = null;
 
+//    private EditTextPreference prefClientChlhNumOfHash = null;
+//    private EditTextPreference prefClientChlhBitSize = null;
+
+    private EditTextPreference prefClientChlhFPR = null;
+    private EditTextPreference prefClientChlhExpectDocCnt = null;
+
 //    private EditTextPreference prefClientKey3 = null;
 //    private EditTextPreference prefClientKey4 = null;
 //    private EditTextPreference prefClientKeyD = null;
@@ -81,6 +87,9 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
         updateSummary(prefClientKey2, prefClientKey2.getText());
         updateSummary(prefServerHostname, prefServerHostname.getText());
         updateSummary(prefClientDatadir, prefClientDatadir.getText());
+
+        updateSummary(prefClientChlhFPR, prefClientChlhFPR.getText());
+        updateSummary(prefClientChlhExpectDocCnt, prefClientChlhExpectDocCnt.getText());
 
 //        updateSummary(prefClientKey3, prefClientKey3.getText());
 //        updateSummary(prefClientKey4, prefClientKey4.getText());
@@ -188,6 +197,78 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
             }
         });
 
+//        prefClientChlhNumOfHash = (EditTextPreference) findPreference(getString(R.string.pref_client_chlh_numofhash));
+//        prefClientChlhNumOfHash.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+//            @Override
+//            public boolean onPreferenceChange(Preference preference, Object newValue) {
+//                updateSummary((EditTextPreference) preference, (String) newValue);
+//                return true;
+//            }
+//        });
+//        prefClientChlhBitSize = (EditTextPreference) findPreference(getString(R.string.pref_client_chlh_bitsize));
+//        prefClientChlhBitSize.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+//            @Override
+//            public boolean onPreferenceChange(Preference preference, Object newValue) {
+//                updateSummary((EditTextPreference) preference, (String) newValue);
+//                return true;
+//            }
+//        });
+        prefClientChlhFPR = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_CHLH_FPR);
+        prefClientChlhFPR.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                updateSummary((EditTextPreference) preference, (String) newValue);
+
+                double fpr = 0;
+
+                try {
+                    fpr = Double.parseDouble((String) newValue);
+                } catch (NumberFormatException ex) {
+                    Log.d(TAG, "failed to parse fpr", ex);
+                }
+
+                int expectDocCnt = 0;
+
+                try {
+                    expectDocCnt = Integer.parseInt(prefClientChlhExpectDocCnt.getText());
+                } catch (NumberFormatException ex) {
+                    Log.d(TAG, "failed to parse expectDocCnt", ex);
+                }
+
+                chlh2Client.setMode3(fpr, expectDocCnt);
+
+                return true;
+            }
+        });
+
+        prefClientChlhExpectDocCnt = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_CHLH_EXPECT_DOC_CNT);
+        prefClientChlhExpectDocCnt.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                updateSummary((EditTextPreference) preference, (String) newValue);
+
+                double fpr = 0;
+
+                try {
+                    fpr = Double.parseDouble(prefClientChlhFPR.getText());
+                } catch (NumberFormatException ex) {
+                    Log.d(TAG, "failed to parse fpr", ex);
+                }
+
+                int expectDocCnt = 0;
+
+                try {
+                    expectDocCnt = Integer.parseInt((String) newValue);
+                } catch (NumberFormatException ex) {
+                    Log.d(TAG, "failed to parse expectDocCnt", ex);
+                }
+
+                chlh2Client.setMode3(fpr, expectDocCnt);
+
+                return true;
+            }
+        });
+
         prefServerHostname = (EditTextPreference) findPreference(AppConstants.PREF_SERVER_HOSTNAME);
         prefServerHostname.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
@@ -223,6 +304,8 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
         updateSummary(prefClientKey1, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
         updateSummary(prefClientKey2, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
         updateSummary(prefServerHostname, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
+        updateSummary(prefClientChlhFPR, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
+        updateSummary(prefClientChlhExpectDocCnt, AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
 
         //added on 15/12/2017 for removing all records from app db
         Preference prefClientClrAppDbBtn = findPreference("prefClientClrAppDbBtn");

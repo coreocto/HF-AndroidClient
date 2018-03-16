@@ -42,23 +42,11 @@ public class VasstClientW extends VasstClient {
         super.GenKey(noOfBytes);
     }
 
-    // the following method should not be invoked
-    @Override
-    public TermFreq Preprocessing(InputStream inputStream, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher) {
-        throw new UnsupportedOperationException("");
-    }
-
     @PrefMon
     public TermFreq Preprocessing(InputStream inputStream, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         TermFreq result = super.Preprocessing(inputStream, x, fileParser, byteCipher);
         addInfo.put("wordCount", result.getTerms().size() + "");
         return result;
-    }
-
-    // the following method should not be invoked
-    @Override
-    public TermFreq Preprocessing(File inFile, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher) {
-        throw new UnsupportedOperationException("");
     }
 
     @PrefMon
@@ -68,21 +56,9 @@ public class VasstClientW extends VasstClient {
         return result;
     }
 
-    // the following method should not be invoked
-    @Override
-    public List<String> CreateReq(String query, BigDecimal x, IByteCipher byteCipher) {
-        throw new UnsupportedOperationException("");
-    }
-
     @PrefMon
     public List<String> CreateReq(String query, BigDecimal x, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         return super.CreateReq(query, x, byteCipher);
-    }
-
-    // the following method should not be invoked
-    @Override
-    public void Encrypt(File fi, File fo, IFileCipher fileCipher) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
-        throw new UnsupportedOperationException("");
     }
 
     @PrefMon
@@ -90,33 +66,15 @@ public class VasstClientW extends VasstClient {
         super.Encrypt(fi, fo, fileCipher);
     }
 
-    // the following method should not be invoked
-    @Override
-    public void Decrypt(File fi, File fo, IFileCipher fileCipher) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
-        throw new UnsupportedOperationException("");
-    }
-
     @PrefMon
     public void Decrypt(File fi, File fo, IFileCipher fileCipher, Map<String, String> addInfo) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IOException {
         super.Decrypt(fi, fo, fileCipher);
-    }
-
-    // the following method should not be invoked
-    @Override
-    public void Encrypt(InputStream fis, OutputStream fos, IFileCipher fileCipher) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
-        throw new UnsupportedOperationException("");
     }
 
     @PrefMon
     public void Encrypt(InputStream fis, OutputStream fos, IFileCipher fileCipher, Map<String, String> addInfo) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException {
         super.Encrypt(fis, fos, fileCipher);
     }
-
-    // the following method should not be invoked
-//    @Override
-//    public void Decrypt(InputStream fis, OutputStream fos, IFileCipher fileCipher) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
-//        throw new UnsupportedOperationException("");
-//    }
 
     @PrefMon
     public void Decrypt(InputStream fis, OutputStream fos, IFileCipher fileCipher, Map<String, String> addInfo) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException {

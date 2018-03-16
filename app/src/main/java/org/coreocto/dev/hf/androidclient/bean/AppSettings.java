@@ -6,8 +6,6 @@ import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.androidclient.wrapper.Chlh2ClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.VasstClientW;
-import org.coreocto.dev.hf.clientlib.sse.mces.McesClient;
-import org.coreocto.dev.hf.commonlib.util.Registry;
 
 public class AppSettings {
 
@@ -15,11 +13,9 @@ public class AppSettings {
     private SuiseClientW suiseClient;
     private SharedPreferences appPref;
     private Gson gson;
-    private Registry registry;
     private VasstClientW vasstClient;
     private DatabaseHelper databaseHelper;
     private Chlh2ClientW chlh2Client;
-    private McesClient mcesClient;
 
     public static AppSettings getInstance() {
         if (instance == null) {
@@ -36,14 +32,6 @@ public class AppSettings {
         this.chlh2Client = chlh2Client;
     }
 
-    public McesClient getMcesClient() {
-        return mcesClient;
-    }
-
-    public void setMcesClient(McesClient mcesClient) {
-        this.mcesClient = mcesClient;
-    }
-
     public VasstClientW getVasstClient() {
         return vasstClient;
     }
@@ -58,14 +46,6 @@ public class AppSettings {
 
     public void setDatabaseHelper(DatabaseHelper databaseHelper) {
         this.databaseHelper = databaseHelper;
-    }
-
-    public Registry getRegistry() {
-        return registry;
-    }
-
-    public void setRegistry(Registry registry) {
-        this.registry = registry;
     }
 
     public Gson getGson() {

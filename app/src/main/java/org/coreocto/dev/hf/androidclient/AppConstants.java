@@ -14,6 +14,9 @@ public class AppConstants {
     public static final String PREF_CLIENT_SSE_TYPE = "client.ssetype";
     public static final String PREF_CLIENT_DATA_PROTECT = "client.dataprotect";
 
+    public static final String PREF_CLIENT_CHLH_FPR = "client.chlh.fpr";
+    public static final String PREF_CLIENT_CHLH_EXPECT_DOC_CNT = "client.chlh.expectdoccnt";
+
 //    public static final String PREF_CLIENT_KEY3 = "client.key3";
 //    public static final String PREF_CLIENT_KEY4 = "client.key4";
 //    public static final String PREF_CLIENT_KEYD = "client.keyd";
@@ -36,6 +39,8 @@ public class AppConstants {
 
     public static final int ERR_CANNOT_CONNECT_SERVER = -100;
     public static final int ERR_GOOGLE_DRIVE_FILE_NOT_READY = -101;
+    public static final int ERR_GOOGLE_DRIVE_FILE_MISSING = -102;
+    public static final int ERR_GOOGLE_DRIVE_DL_FAILED = -103;
 
     //preference item for crypto test
     public static final String PREF_CT_DEFAULT_RUN_CNT = "1";

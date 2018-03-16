@@ -131,12 +131,6 @@ public class TraceAspect {
                     .post(requestBody)
                     .build();
 
-//            try (Response response = httpClient.newCall(request).execute()) {
-//                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-//
-//                System.out.println(response.body().string());
-//            }
-
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {

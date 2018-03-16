@@ -144,21 +144,32 @@ public class SearchFragment extends Fragment {
             @Override
             public void handleMessage(Message msg) {// handler接收到消息后就会执行此方法
 
-                if (msg.what == AppConstants.ERR_GOOGLE_DRIVE_FILE_NOT_READY) {
+                if (msg.what <= AppConstants.ERR_CANNOT_CONNECT_SERVER) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-                    builder.setTitle("Error")
-                            .setMessage("Your file is not yet ready on Google Drive.\nPlease try again later.")
-                            .setCancelable(false)
-                            .setPositiveButton("OK", null)
-                            .show();
-                } else if (msg.what == AppConstants.ERR_CANNOT_CONNECT_SERVER) {
-//                progressDialog.dismiss();// 关闭ProgressDialog
-                    AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-                    builder.setTitle("Error")
-                            .setMessage("Cannot connect to server.")
-                            .setCancelable(false)
-                            .setPositiveButton("OK", null)
-                            .show();
+
+                    if (msg.what == AppConstants.ERR_GOOGLE_DRIVE_FILE_NOT_READY) {
+                        builder.setTitle("Error")
+                                .setMessage("Your file is not yet ready on Google Drive.\nPlease try again later.")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", null);
+                    } else if (msg.what == AppConstants.ERR_CANNOT_CONNECT_SERVER) {
+                        builder.setTitle("Error")
+                                .setMessage("Cannot connect to server.")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", null);
+                    } else if (msg.what == AppConstants.ERR_GOOGLE_DRIVE_FILE_MISSING) {
+                        builder.setTitle("Error")
+                                .setMessage("Cannot find the specified file from google drive.")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", null);
+                    } else if (msg.what == AppConstants.ERR_GOOGLE_DRIVE_DL_FAILED) {
+                        builder.setTitle("Error")
+                                .setMessage("Error occured when downloading document from Google Drive.\nPlease try again later.")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", null);
+                    }
+
+                    builder.show();
                 } else {
                     AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
                     builder.setTitle("Search result")
@@ -166,7 +177,6 @@ public class SearchFragment extends Fragment {
                             .setCancelable(false)
                             .setPositiveButton("OK", null)
                             .show();
-//                }
                     arrayAdapter.notifyDataSetChanged();
                 }
             }
@@ -195,29 +205,6 @@ public class SearchFragment extends Fragment {
                     @Override
                     public void run() {
 
-                        boolean pingOk = true;
-
-                        //add service check to server application before doing anything
-
-                        Response httpResponse = null;
-                        try {
-                            Request pingRequest = new Request.Builder().url(pingUrl).build();
-                            httpResponse = new OkHttpClient().newCall(pingRequest).execute();
-                        } catch (IOException ex) {
-                            Log.e(TAG, "error when ping web server", ex);
-                            pingOk = false;
-                        } finally {
-                            if (httpResponse != null) {
-                                httpResponse.close();
-                            }
-                        }
-
-                        if (!pingOk) {
-                            mHandler.sendEmptyMessage(AppConstants.ERR_CANNOT_CONNECT_SERVER);
-                            return;
-                        }
-                        //end of service check
-
                         SQLiteDatabase database = appSettings.getDatabaseHelper().getReadableDatabase();
                         Cursor c = database.rawQuery("select cremoteid from " + AppConstants.TABLE_REMOTE_DOCS + " where cremotename=?", new String[]{docId});
 
@@ -235,6 +222,9 @@ public class SearchFragment extends Fragment {
                         //TODO: if the upload process does not complete, this remoteId could be null.
                         if (remoteId == null && recExists) {
                             mHandler.sendEmptyMessage(AppConstants.ERR_GOOGLE_DRIVE_FILE_NOT_READY);
+                            return;
+                        } else if (remoteId == null) {
+                            mHandler.sendEmptyMessage(AppConstants.ERR_GOOGLE_DRIVE_FILE_MISSING);
                             return;
                         }
 
@@ -313,12 +303,7 @@ public class SearchFragment extends Fragment {
                                         } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
                                             fileCipher = new AesCbcPkcs5FcImpl(vasstClient.getSecretKey(), iv);
                                             vasstClient.Decrypt(tempFile, decFile, fileCipher, addInfo);
-                                        }
-//                                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)) {
-//                                            fileCipher = new AesCbcPkcs5FcImpl(mcesClient.getK1(), iv);
-//                                            fileCipher.decrypt(tempFile, decFile);
-//                                        }
-                                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                                        } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
                                             fileCipher = new AesCbcPkcs5FcImpl(chlh2Client.getSecretKey(), iv);
                                             fileCipher.decrypt(tempFile, decFile);
                                         } else {
@@ -359,21 +344,7 @@ public class SearchFragment extends Fragment {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
                                         Log.e(TAG, "failed to get document from google drive", e);
-
-                                        // Handle failure
-//                                        progressDialog.hide();
-//
-//                                        ctx.runOnUiThread(new Runnable() {
-//                                            @Override
-//                                            public void run() {
-//                                                AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
-//                                                builder.setTitle("Error")
-//                                                        .setMessage("Error occured when downloading document from Google Drive.\nPlease try again later.")
-//                                                        .setCancelable(false)
-//                                                        .setPositiveButton("OK", null)
-//                                                        .show();
-//                                            }
-//                                        });
+                                        mHandler.sendEmptyMessage(AppConstants.ERR_GOOGLE_DRIVE_DL_FAILED);
                                     }
                                 });
                     }
@@ -427,8 +398,6 @@ public class SearchFragment extends Fragment {
 
                         if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
 
-                            IByteCipher byteCipher = new AesCbcPkcs5BcImpl(client.getKey1(), new byte[16]);
-
                             String keyword = etKeyword.getText().toString();
 
                             SQLiteDatabase db = null;
@@ -449,7 +418,7 @@ public class SearchFragment extends Fragment {
                             IKeyedHashFunc keyedHashFunc = new HmacMd5Impl();
 
                             try {
-                                token = client.SearchToken(keyword, keyedHashFunc, addInfo).getSearchToken();//ClientUtil.encryptStr(client.getKey1(), etKeyword.getText().toString());
+                                token = client.SearchToken(keyword, keyedHashFunc, addInfo).getSearchToken();
                             } catch (Exception e) {
                                 Log.e(TAG, "error when creating search token from keyword", e);
                             }
@@ -459,9 +428,6 @@ public class SearchFragment extends Fragment {
 
                         } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
                             String searchStr = etKeyword.getText().toString();
-
-                            // TODO: need to think of a method to ensure same x when performing search
-//                            byte x = vasstClient.getSecretKey()[0];
 
                             List<Integer> list_of_x = new ArrayList<>();
 
@@ -497,39 +463,7 @@ public class SearchFragment extends Fragment {
 
                             formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
 
-                        }
-//                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_MCES)) {
-//                            String searchStr = etKeyword.getText().toString();
-//
-//                            byte[] iv = new byte[16];
-//                            KeyCipher keyCipher4Mces = new KeyCipher();
-//                            keyCipher4Mces.setK1Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK1(), iv));
-//                            keyCipher4Mces.setK2Cipher(new AesCbcPkcs5BcImpl(mcesClient.getK2(), iv));
-//
-//                            keyCipher4Mces.setKeyedHashFunc(new HmacMd5Impl());
-//
-//                            keyCipher4Mces.setKdCipher(new AesCbcPkcs5BcImpl(mcesClient.getKd(), iv));
-//                            keyCipher4Mces.setKcCipher(new AesCbcPkcs5BcImpl(mcesClient.getKc(), iv));
-//                            keyCipher4Mces.setKlCipher(new AesCbcPkcs5BcImpl(mcesClient.getKl(), iv));
-//
-//                            keyCipher4Mces.setByteCipher(new AesCbcPkcs5BcImpl());
-//
-//                            List<String> dataToServer = null;
-//
-//                            try {
-//                                dataToServer = mcesClient.Query1(keyCipher4Mces, searchStr);
-//                            } catch (Exception e) {
-//                                e.printStackTrace();
-//                            }
-//
-//                            for (int i = dataToServer.size() - 1; i >= 0; i--) {
-//                                String data = dataToServer.get(i);
-//                                formBodyBuilder = formBodyBuilder.add("q", data);
-//                            }
-//                            formBodyBuilder = formBodyBuilder.add("st", Constants.SSE_TYPE_MCES + "");
-//
-//                        }
-                        else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
+                        } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
                             String searchStr = etKeyword.getText().toString();
                             List<String> trapdoors = chlh2Client.Trapdoor(searchStr);
                             for (String trapdoor : trapdoors) {
@@ -579,9 +513,11 @@ public class SearchFragment extends Fragment {
 
                                     if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
                                         List<FileInfo> fileList = searchResponse.getFiles();
-                                        IByteCipher byteCipher = new AesCbcPkcs5BcImpl(chlh2Client.getSecretKey(), new byte[16]);
+                                        IByteCipher byteCipher = null;
                                         for (FileInfo fileInfo : fileList) {
                                             String tmp = fileInfo.getName();
+                                            byte[] iv = base64.decodeToByteArray(fileInfo.getWeiv());
+                                            byteCipher = new AesCbcPkcs5BcImpl(chlh2Client.getSecretKey(), iv);
                                             String decId = null;
                                             try {
                                                 decId = new String(byteCipher.decrypt(base64.decodeToByteArray(tmp)), LibConstants.ENCODING_UTF8);

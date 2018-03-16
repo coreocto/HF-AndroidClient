@@ -46,6 +46,8 @@
     </string-array>
     <string-array name="opt_sse_type">
         <item>SUISE</item>
+        <item>SUISE2</item>
+        <item>SUISE3</item>
         <item>VASST16</item>
         <!--<item>MCES</item>-->
         <item>CHLH15</item>

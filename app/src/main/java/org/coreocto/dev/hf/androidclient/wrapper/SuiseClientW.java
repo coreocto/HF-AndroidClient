@@ -42,21 +42,9 @@ public class SuiseClientW extends SuiseClient {
         super.Gen(noOfBytes);
     }
 
-    // the following method should not be invoked
-    @Override
-    public void Dec(InputStream fis, OutputStream fos, IFileCipher fileCipher) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
-        throw new UnsupportedOperationException("");
-    }
-
     @PrefMon
     public void Dec(InputStream fis, OutputStream fos, IFileCipher fileCipher, Map<String, String> addInfo) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IOException {
         super.Dec(fis, fos, fileCipher);
-    }
-
-    // the following method should not be invoked
-    @Override
-    public void Enc(InputStream fis, OutputStream fos, IFileCipher fileCipher) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException {
-        throw new UnsupportedOperationException("");
     }
 
     @PrefMon
@@ -64,32 +52,14 @@ public class SuiseClientW extends SuiseClient {
         super.Enc(fis, fos, fileCipher);
     }
 
-    // the following method should not be invoked
-    @Override
-    public void Enc(File fi, File fo, IFileCipher fileCipher) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
-        throw new UnsupportedOperationException("");
-    }
-
     @PrefMon
     public void Enc(File fi, File fo, IFileCipher fileCipher, Map<String, String> addInfo) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IOException {
         super.Enc(fi, fo, fileCipher);
     }
 
-    // the following method should not be invoked
-    @Override
-    public void Dec(File fi, File fo, IFileCipher fileCipher) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException {
-        throw new UnsupportedOperationException("");
-    }
-
     @PrefMon
     public void Dec(File fi, File fo, IFileCipher fileCipher, Map<String, String> addInfo) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IOException {
         super.Dec(fi, fo, fileCipher);
-    }
-
-    // the following method should not be invoked
-    @Override
-    public AddTokenResult AddToken(InputStream inputStream, boolean includePrefix, boolean includeSuffix, String docId, IFileParser fileParser, IKeyedHashFunc keyedHashFunc, Random random) throws BadPaddingException, InvalidAlgorithmParameterException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-        return super.AddToken(inputStream, includePrefix, includeSuffix, docId, fileParser, keyedHashFunc, random);
     }
 
     @PrefMon
@@ -99,21 +69,9 @@ public class SuiseClientW extends SuiseClient {
         return result;
     }
 
-    // the following method should not be invoked
-    @Override
-    public AddTokenResult AddToken(File inFile, boolean includePrefix, boolean includeSuffix, String docId, IFileParser fileParser, IKeyedHashFunc keyedHashFunc, Random random) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        throw new UnsupportedOperationException("");
-    }
-
     @PrefMon
     public AddTokenResult AddToken(File inFile, boolean includePrefix, boolean includeSuffix, String docId, IFileParser fileParser, IKeyedHashFunc keyedHashFunc, Random random, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
         return super.AddToken(inFile, includePrefix, includeSuffix, docId, fileParser, keyedHashFunc, random);
-    }
-
-    // the following method should not be invoked
-    @Override
-    public SearchTokenResult SearchToken(String keyword, IKeyedHashFunc keyedHashFunc) throws BadPaddingException, InvalidKeyException, UnsupportedEncodingException, IllegalBlockSizeException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        throw new UnsupportedOperationException("");
     }
 
     @PrefMon

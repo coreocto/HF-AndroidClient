@@ -12,7 +12,4 @@
             android:layout_gravity="left"
             android:layout_weight="5"
             android:text="@string/pref_client_genkeys"></Button>
-    <!--<Button android:text="Password?" android:layout_width="fill_parent"
-        android:layout_weight="5" android:layout_height="wrap_content"
-        android:id="@+id/forgottenPasswordButton"></Button>-->
 </LinearLayout>
