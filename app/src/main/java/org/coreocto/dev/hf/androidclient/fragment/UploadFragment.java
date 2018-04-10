@@ -7,10 +7,8 @@ import android.content.ClipData;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.*;
-import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -32,11 +30,13 @@ import org.coreocto.dev.hf.androidclient.bean.AppSettings;
 import org.coreocto.dev.hf.androidclient.bean.UploadItem;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5BcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5FcImpl;
+import org.coreocto.dev.hf.androidclient.crypto.AesCtrNoPadBcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.HmacMd5Impl;
 import org.coreocto.dev.hf.androidclient.db.DatabaseHelper;
 import org.coreocto.dev.hf.androidclient.parser.DocFileParserImpl;
 import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
+import org.coreocto.dev.hf.androidclient.util.FileUtil;
 import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
 import org.coreocto.dev.hf.androidclient.util.SystemUtil;
 import org.coreocto.dev.hf.androidclient.view.UploadItemArrayAdapter;
@@ -223,21 +223,6 @@ public class UploadFragment extends Fragment {
                 }
             };
 
-            private long getFileSize(Uri docUri) {
-                long result = -1;
-                if (docUri.getScheme() != null && docUri.getScheme().startsWith("content")) {
-                    Cursor returnCursor = ctx.getContentResolver().query(docUri, null, null, null, null);
-                    int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
-                    returnCursor.moveToFirst();
-                    result = returnCursor.getLong(sizeIndex);
-                    returnCursor.close();
-                } else if (docUri.getScheme() != null && docUri.getScheme().startsWith("file")) {
-                    File fileRef = new File(docUri.getPath());
-                    result = fileRef.length();
-                }
-                return result;
-            }
-
             private void saveFileToDrive(final Uri docUri, final String docId, final Object sseClient, final boolean enableStatRpt, final byte[] randomIv) {
 
                 final Task<DriveFolder> rootFolderTask = mDriveResourceClient.getRootFolder();
@@ -251,7 +236,7 @@ public class UploadFragment extends Fragment {
                                 DriveContents contents = createContentsTask.getResult();
                                 OutputStream outputStream = contents.getOutputStream();
 
-                                long curFileSz = getFileSize(docUri);
+                                long curFileSz = FileUtil.getFileSize(ctx, docUri);
 
                                 Map<String, String> addInfo = new HashMap<>();
                                 addInfo.put("fileSize", curFileSz + "");
@@ -500,9 +485,8 @@ public class UploadFragment extends Fragment {
 
                                                 formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
 
-                                                // TODO: need to think of a method to ensure same x when performing search
                                                 Random random = new SecureRandom();
-                                                int x = vasstClient.getSecretKey()[0];  //random.nextInt();
+                                                int x = random.nextInt();
 
                                                 {
                                                     ContentValues values = new ContentValues();
@@ -515,7 +499,7 @@ public class UploadFragment extends Fragment {
 
                                                 byte[] iv = new byte[16];
 
-                                                IByteCipher byteCipher = new AesCbcPkcs5BcImpl(vasstClient.getSecretKey(), iv);
+                                                IByteCipher byteCipher = new AesCtrNoPadBcImpl(vasstClient.getSecretKey(), iv);
 
                                                 TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x_in_bd, fileParser, byteCipher, addInfo);
 

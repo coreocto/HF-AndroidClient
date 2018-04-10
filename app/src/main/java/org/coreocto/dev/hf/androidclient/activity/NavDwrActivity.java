@@ -264,6 +264,8 @@ public class NavDwrActivity extends AppCompatActivity
 
             String key1 = appPref.getString(AppConstants.PREF_CLIENT_KEY1, null);
             String key2 = appPref.getString(AppConstants.PREF_CLIENT_KEY2, null);
+            String k = appPref.getString(AppConstants.PREF_CLIENT_K, null);
+            String m = appPref.getString(AppConstants.PREF_CLIENT_M, null);
 
 //        String key3 = appPref.getString(AppConstants.PREF_CLIENT_KEY3, null);
 //        String key4 = appPref.getString(AppConstants.PREF_CLIENT_KEY4, null);
@@ -326,6 +328,26 @@ public class NavDwrActivity extends AppCompatActivity
                 suiseClient.setKey2(key2Bytes);
 //            mcesClient.setK2(key2Bytes);
             }
+
+//            if (k != null) {
+//                try {
+//                    vasstClient.setK(Integer.parseInt(k));
+//                } catch (NumberFormatException ex) {
+//                    vasstClient.setK(-1);
+//                }
+//            } else {
+//                vasstClient.setK(-1);
+//            }
+//
+//            if (m != null) {
+//                try {
+//                    vasstClient.setM(Integer.parseInt(m));
+//                } catch (NumberFormatException ex) {
+//                    vasstClient.setM(-1);
+//                }
+//            } else {
+//                vasstClient.setM(-1);
+//            }
 
 //        if (key3!=null && !key3.isEmpty()){
 //            byte[] key3Bytes = registry.getBase64().decodeToByteArray(key3);

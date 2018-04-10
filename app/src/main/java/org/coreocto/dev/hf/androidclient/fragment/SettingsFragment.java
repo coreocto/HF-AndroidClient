@@ -31,13 +31,13 @@ import java.io.File;
 
 public class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
+    private static final String TAG = "SettingsFragment";
     private EditTextPreference prefClientKey1 = null;
     private EditTextPreference prefClientKey2 = null;
     private EditTextPreference prefServerHostname = null;
     private EditTextPreference prefClientDatadir = null;
     private ListPreference prefClientSsetype = null;
     private CheckBoxPreference prefServerReportStat = null;
-    private static final String TAG = "SettingsFragment";
     private CheckBoxPreference prefClientDataProtect = null;
 
 //    private EditTextPreference prefClientChlhNumOfHash = null;
@@ -51,6 +51,9 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
 //    private EditTextPreference prefClientKeyD = null;
 //    private EditTextPreference prefClientKeyC = null;
 //    private EditTextPreference prefClientKeyL = null;
+
+//    private EditTextPreference prefClientM = null;
+//    private EditTextPreference prefClientK = null;
 
     private SharedPreferences sharedPreferences;
 
@@ -72,6 +75,14 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     private static void updateSummary(EditTextPreference pref, String newValue) {
         if (newValue == null || newValue.toString().isEmpty()) {
             pref.setSummary(AppConstants.PREF_EMPTY_VAL_PLACEHOLDER);
+        } else {
+            pref.setSummary(newValue);
+        }
+    }
+
+    private static void updateSummary(EditTextPreference pref, Integer newValue) {
+        if (newValue == null) {
+            pref.setSummary(-1);
         } else {
             pref.setSummary(newValue);
         }
@@ -196,6 +207,32 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
                 return validBase64;
             }
         });
+
+//        prefClientM = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_M);
+//        prefClientM.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+//            @Override
+//            public boolean onPreferenceChange(Preference preference, Object newValue) {
+//                if (newValue instanceof Integer) {
+//                    int newValI = (int) newValue;
+//                    updateSummary((EditTextPreference) preference, newValI);
+//                    vasstClient.setM(newValI);
+//                }
+//                return true;
+//            }
+//        });
+//
+//        prefClientK = (EditTextPreference) findPreference(AppConstants.PREF_CLIENT_K);
+//        prefClientK.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+//            @Override
+//            public boolean onPreferenceChange(Preference preference, Object newValue) {
+//                if (newValue instanceof Integer) {
+//                    int newValI = (int) newValue;
+//                    updateSummary((EditTextPreference) preference, newValI);
+//                    vasstClient.setK(newValI);
+//                }
+//                return true;
+//            }
+//        });
 
 //        prefClientChlhNumOfHash = (EditTextPreference) findPreference(getString(R.string.pref_client_chlh_numofhash));
 //        prefClientChlhNumOfHash.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {

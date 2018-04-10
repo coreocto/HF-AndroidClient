@@ -35,6 +35,7 @@ import org.coreocto.dev.hf.androidclient.bean.FileInfo;
 import org.coreocto.dev.hf.androidclient.bean.SearchResponse;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5BcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.AesCbcPkcs5FcImpl;
+import org.coreocto.dev.hf.androidclient.crypto.AesCtrNoPadBcImpl;
 import org.coreocto.dev.hf.androidclient.crypto.HmacMd5Impl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.view.AutoCompleteAdapter;
@@ -443,7 +444,7 @@ public class SearchFragment extends Fragment {
 
                             Log.d(TAG, "list_of_x.size()=" + list_of_x.size());
 
-                            IByteCipher byteCipher = new AesCbcPkcs5BcImpl(vasstClient.getSecretKey(), new byte[16]);
+                            IByteCipher byteCipher = new AesCtrNoPadBcImpl(vasstClient.getSecretKey(), new byte[16]);
 
                             List<String> encTokens = new ArrayList<>();
                             int list_of_x_sz = list_of_x.size();
