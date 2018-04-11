@@ -13,6 +13,14 @@
                 android:enabled="false"
                 android:shouldDisableView="false"/>
         <!--<EditTextPreference-->
+                <!--android:key="client.m"-->
+                <!--android:title="@string/pref_client_m"-->
+                <!--android:inputType="number"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.k"-->
+                <!--android:title="@string/pref_client_k"-->
+                <!--android:inputType="number"/>-->
+        <!--<EditTextPreference-->
                 <!--android:key="client.key3"-->
                 <!--android:title="@string/pref_client_key3"-->
                 <!--android:enabled="false"-->

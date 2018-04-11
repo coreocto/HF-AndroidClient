@@ -81,7 +81,7 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
     compile 'com.google.android.gms:play-services-auth:11.8.0'
     compile 'com.google.android.gms:play-services-drive:11.8.0'
-    compile 'com.github.coreocto:HF-ClientLib:acc7d55'
+    compile 'com.github.coreocto:HF-ClientLib:f5ed83e'
     compile 'com.itextpdf:itextg:5.5.10'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     testCompile 'junit:junit:4.12'

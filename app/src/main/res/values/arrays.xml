@@ -49,6 +49,8 @@
         <item>SUISE2</item>
         <item>SUISE3</item>
         <item>VASST16</item>
+        <item>VASST16-2</item>
+        <item>VASST16-3</item>
         <!--<item>MCES</item>-->
         <item>CHLH15</item>
     </string-array>
