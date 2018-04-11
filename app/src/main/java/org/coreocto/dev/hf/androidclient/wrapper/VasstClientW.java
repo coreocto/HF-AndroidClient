@@ -43,15 +43,15 @@ public class VasstClientW extends VasstClient {
     }
 
     @PrefMon
-    public TermFreq Preprocessing(InputStream inputStream, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
-        TermFreq result = super.Preprocessing(inputStream, x, fileParser, byteCipher);
+    public TermFreq Preprocessing(InputStream inputStream, BigDecimal x, boolean includePrefix, boolean includeSuffix, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+        TermFreq result = super.Preprocessing(inputStream, x, includePrefix, includeSuffix, fileParser, byteCipher);
         addInfo.put("wordCount", result.getTerms().size() + "");
         return result;
     }
 
     @PrefMon
-    public TermFreq Preprocessing(File inFile, BigDecimal x, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
-        TermFreq result = super.Preprocessing(inFile, x, fileParser, byteCipher);
+    public TermFreq Preprocessing(File inFile, BigDecimal x, boolean includePrefix, boolean includeSuffix, IFileParser fileParser, IByteCipher byteCipher, Map<String, String> addInfo) throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IOException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        TermFreq result = super.Preprocessing(inFile, x, includePrefix, includeSuffix, fileParser, byteCipher);
         addInfo.put("wordCount", result.getTerms().size() + "");
         return result;
     }
