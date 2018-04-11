@@ -38,7 +38,6 @@ import org.coreocto.dev.hf.androidclient.parser.PdfFileParserImpl;
 import org.coreocto.dev.hf.androidclient.util.AndroidBase64Impl;
 import org.coreocto.dev.hf.androidclient.util.FileUtil;
 import org.coreocto.dev.hf.androidclient.util.NetworkUtil;
-import org.coreocto.dev.hf.androidclient.util.SystemUtil;
 import org.coreocto.dev.hf.androidclient.view.UploadItemArrayAdapter;
 import org.coreocto.dev.hf.androidclient.wrapper.Chlh2ClientW;
 import org.coreocto.dev.hf.androidclient.wrapper.SuiseClientW;
@@ -291,9 +290,9 @@ public class UploadFragment extends Fragment {
                                 return mDriveResourceClient.createFile(parent, changeSet, contents, execOpts);
                             }
                         }).addOnSuccessListener(activity, new OnSuccessListener<DriveFile>() {
-                            @Override
-                            public void onSuccess(final DriveFile driveFile) {
-                                Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
+                    @Override
+                    public void onSuccess(final DriveFile driveFile) {
+                        Log.d(TAG, "onSuccess(), " + driveFile.getDriveId());
 
 //                                mDriveResourceClient.addChangeSubscription(driveFile).addOnSuccessListener(new OnSuccessListener<Void>() {
 //                                    @Override
@@ -301,8 +300,8 @@ public class UploadFragment extends Fragment {
 //                                        Log.d(TAG, "changed listener on " + driveFile.getDriveId() + " subscribed");
 //                                    }
 //                                });
-                            }
-                        })
+                    }
+                })
                         .addOnFailureListener(activity, new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
@@ -437,7 +436,9 @@ public class UploadFragment extends Fragment {
                                                             ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_3)
                                                     ) {
                                                 saveFileToDrive(docUri, docId, client, enableStatRpt, randomIvForFC);
-                                            } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
+                                            } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST) ||
+                                                    ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_2) ||
+                                                    ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_3)) {
                                                 saveFileToDrive(docUri, docId, vasstClient, enableStatRpt, randomIvForFC);
                                             } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_CHLH)) {
                                                 saveFileToDrive(docUri, docId, chlh2Client, enableStatRpt, randomIvForFC);
@@ -476,14 +477,20 @@ public class UploadFragment extends Fragment {
                                                 addTokenResult.getX().clear();
                                                 addTokenResult = null;
 
-                                                SystemUtil.freeMemory();
-
                                                 formBodyBuilder.add("token", token);
                                                 formBodyBuilder.add("docId", docId);
 //                                                formBodyBuilder.add("weiv", base64.encodeToString(iv)); //as we switched to HMAC now, this iv is no longer useful
-                                            } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
+                                            } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST) ||
+                                                    ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_2) ||
+                                                    ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_3)) {
 
-                                                formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
+                                                if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
+                                                    formBodyBuilder.add("st", Constants.SSE_TYPE_VASST + "");
+                                                } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_2)) {
+                                                    formBodyBuilder.add("st", AppConstants.SSE_TYPE_VASST_2 + "");
+                                                } else if (ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_3)) {
+                                                    formBodyBuilder.add("st", AppConstants.SSE_TYPE_VASST_3 + "");
+                                                }
 
                                                 Random random = new SecureRandom();
                                                 int x = random.nextInt();
@@ -501,7 +508,10 @@ public class UploadFragment extends Fragment {
 
                                                 IByteCipher byteCipher = new AesCtrNoPadBcImpl(vasstClient.getSecretKey(), iv);
 
-                                                TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x_in_bd, fileParser, byteCipher, addInfo);
+                                                boolean includePrefix = ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_2) || ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_3);
+                                                boolean includeSuffix = ssetype.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_3);
+
+                                                TermFreq termFreq = vasstClient.Preprocessing(ctx.getContentResolver().openInputStream(docUri), x_in_bd, includePrefix, includeSuffix, fileParser, byteCipher, addInfo);
 
                                                 String terms = gson.toJson(termFreq);
 

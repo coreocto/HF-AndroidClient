@@ -30,6 +30,9 @@ public class AppConstants {
     public static final String PREF_CLIENT_SSE_TYPE_SUISE_2 = "SUISE2";
     public static final String PREF_CLIENT_SSE_TYPE_SUISE_3 = "SUISE3";
 
+    public static final String PREF_CLIENT_SSE_TYPE_VASST_2 = "VASST16-2";
+    public static final String PREF_CLIENT_SSE_TYPE_VASST_3 = "VASST16-3";
+
     public static final String REQ_UPLOAD_URL = "upload";
     public static final String REQ_PING_URL = "ping";
     public static final String REQ_STAT_URL = "stat";
@@ -61,6 +64,12 @@ public class AppConstants {
     public static final String FILE_EXT_ENCRYPTED = ".enc";
     public static final String FILE_EXT_DECRYPTED = ".txt";
 
-    public static final int SSE_TYPE_SUISE_2 = Constants.SSE_TYPE_SUISE - 1;    //suise + all keyword suffix search
-    public static final int SSE_TYPE_SUISE_3 = SSE_TYPE_SUISE_2 - 1;            //suise + all keyword prefix search
+    public static final int SSE_TYPE_SUISE_2 = Constants.SSE_TYPE_SUISE - 1;    //suise + all keyword prefixes search
+    public static final int SSE_TYPE_SUISE_3 = SSE_TYPE_SUISE_2 - 1;            //suise + full partial search
+
+    public static final int SSE_TYPE_VASST_2 = Constants.SSE_TYPE_VASST + 3;    //vasst + all keyword prefixes search
+    public static final int SSE_TYPE_VASST_3 = SSE_TYPE_VASST_2 + 1;            //vasst + full partial search
+
+    public static final String PREF_CLIENT_M = "client.m";
+    public static final String PREF_CLIENT_K = "client.k";
 }
