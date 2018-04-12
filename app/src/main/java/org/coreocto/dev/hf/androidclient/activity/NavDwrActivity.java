@@ -267,6 +267,9 @@ public class NavDwrActivity extends AppCompatActivity
             String k = appPref.getString(AppConstants.PREF_CLIENT_K, null);
             String m = appPref.getString(AppConstants.PREF_CLIENT_M, null);
 
+            String hostname = appPref.getString(AppConstants.PREF_SERVER_HOSTNAME, null);
+            TraceAspect.setStatServerHostname(hostname);
+
 //        String key3 = appPref.getString(AppConstants.PREF_CLIENT_KEY3, null);
 //        String key4 = appPref.getString(AppConstants.PREF_CLIENT_KEY4, null);
 //        String keyD = appPref.getString(AppConstants.PREF_CLIENT_KEYD, null);

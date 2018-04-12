@@ -22,10 +22,17 @@ public class TraceAspect {
 
     public static final OkHttpClient httpClient;
     public static final String REQ_STAT_URL = "stat";
-    public static final String PREF_SERVER_HOSTNAME = "http://192.168.11.129:8080/";//158.132.9.225:8080/";
+    private static String statServerHostname = "http://192.168.11.129:8080/";//158.132.9.225:8080/";
     private static final String POINTCUT_METHOD = "execution(@org.coreocto.dev.hf.perfmon.annotation.PrefMon * *(..))";
     private static final String POINTCUT_CONSTRUCTOR = "execution(@org.coreocto.dev.hf.perfmon.annotation.PrefMon *.new(..))";
     private static final String TAG = "TraceAspect";
+
+    public static void setStatServerHostname(String newHostname) {
+        if (newHostname != null && !newHostname.endsWith("/")) {
+            newHostname += "/";
+        }
+        statServerHostname = newHostname;
+    }
 
     static {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
@@ -104,9 +111,9 @@ public class TraceAspect {
         Object result = joinPoint.proceed();
         stopWatch.stop();
 
-        if (enabled) {
+        if (enabled && statServerHostname != null) {
 
-            final String statUrl = PREF_SERVER_HOSTNAME + REQ_STAT_URL;
+            final String statUrl = statServerHostname + REQ_STAT_URL;
 
             String type = className + "." + methodName;
 

@@ -397,7 +397,9 @@ public class SearchFragment extends Fragment {
 
                         Map<String, String> addInfo = new HashMap<>();
 
-                        if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE)) {
+                        if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE) ||
+                                sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_2) ||
+                                sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_SUISE_3)) {
 
                             String keyword = etKeyword.getText().toString();
 
@@ -427,7 +429,9 @@ public class SearchFragment extends Fragment {
                             formBodyBuilder.add("q", token);
                             formBodyBuilder.add("st", Constants.SSE_TYPE_SUISE + "");
 
-                        } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST)) {
+                        } else if (sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST) ||
+                                sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_2) ||
+                                sseType.equalsIgnoreCase(AppConstants.PREF_CLIENT_SSE_TYPE_VASST_3)) {
                             String searchStr = etKeyword.getText().toString();
 
                             List<Integer> list_of_x = new ArrayList<>();

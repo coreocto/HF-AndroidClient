@@ -310,7 +310,9 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
         prefServerHostname.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
-                updateSummary((EditTextPreference) preference, (String) newValue);
+                String hostname = (String) newValue;
+                updateSummary((EditTextPreference) preference, hostname);
+                TraceAspect.setStatServerHostname(hostname);
                 return true;
             }
         });
