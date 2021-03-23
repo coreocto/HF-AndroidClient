@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+                android:id="@+id/nav_search"
+                android:icon="@android:drawable/ic_menu_search"
+                android:title="Search"/>
+        <item
+                android:id="@+id/nav_upload"
+                android:icon="@android:drawable/ic_menu_upload"
+                android:title="Upload"/>
+        <item
+                android:id="@+id/nav_settings"
+                android:icon="@drawable/ic_menu_manage"
+                android:title="Settings"/>
+
+        <!--<item-->
+        <!--android:id="@+id/nav_log"-->
+        <!--android:icon="@android:drawable/ic_menu_recent_history"-->
+        <!--android:title="Log" />-->
+    </group>
+
+    <!--<group android:checkableBehavior="single">
+        <item
+                android:id="@+id/nav_test"
+                android:icon="?android:attr/alertDialogIcon"
+                android:title="Test"/>
+        <item
+                android:id="@+id/nav_crypto"
+                android:icon="?android:attr/alertDialogIcon"
+                android:title="Crypto Test"/>
+    </group>
+
+    <group android:checkableBehavior="single">
+        <item
+                android:id="@+id/nav_crypto_test"
+                android:icon="?android:attr/alertDialogIcon"
+                android:title="Crypto Test"/>
+    </group>-->
+
+</menu>

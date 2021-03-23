@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/pref_client">
+        <EditTextPreference
+                android:key="client.key1"
+                android:title="@string/pref_client_key1"
+                android:enabled="false"
+                android:shouldDisableView="false"
+        />
+        <EditTextPreference
+                android:key="client.key2"
+                android:title="@string/pref_client_key2"
+                android:enabled="false"
+                android:shouldDisableView="false"/>
+        <!--<EditTextPreference-->
+                <!--android:key="client.m"-->
+                <!--android:title="@string/pref_client_m"-->
+                <!--android:inputType="number"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.k"-->
+                <!--android:title="@string/pref_client_k"-->
+                <!--android:inputType="number"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.key3"-->
+                <!--android:title="@string/pref_client_key3"-->
+                <!--android:enabled="false"-->
+                <!--android:shouldDisableView="false"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.key4"-->
+                <!--android:title="@string/pref_client_key4"-->
+                <!--android:enabled="false"-->
+                <!--android:shouldDisableView="false"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.keyd"-->
+                <!--android:title="@string/pref_client_keyd"-->
+                <!--android:enabled="false"-->
+                <!--android:shouldDisableView="false"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.keyc"-->
+                <!--android:title="@string/pref_client_keyc"-->
+                <!--android:enabled="false"-->
+                <!--android:shouldDisableView="false"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.keyl"-->
+                <!--android:title="@string/pref_client_keyl"-->
+                <!--android:enabled="false"-->
+                <!--android:shouldDisableView="false"/>-->
+        <!--<EditTextPreference-->
+            <!--android:key="client.chlh.numOfHash"-->
+            <!--android:title="@string/pref_client_chlh_numofhash"/>-->
+        <!--<EditTextPreference-->
+                <!--android:key="client.chlh.bitsize"-->
+                <!--android:title="@string/pref_client_chlh_bitsize"/>-->
+        <EditTextPreference
+            android:key="client.chlh.fpr"
+            android:title="@string/pref_client_chlh_fpr"/>
+        <EditTextPreference
+                android:key="client.chlh.expectdoccnt"
+                android:title="@string/pref_client_chlh_expectdoccnt"/>
+        <EditTextPreference
+                android:key="client.datadir"
+                android:title="@string/pref_client_datadir"/>
+        <Preference
+                android:key="prefClientGenKeysBtn"
+                android:title="@string/pref_client_genkeys"/>
+        <Preference
+                android:key="prefClientClrAppDbBtn"
+                android:title="@string/pref_client_clrappdb"/>
+        <ListPreference
+                android:key="client.ssetype"
+                android:title="@string/pref_client_ssetype"
+                android:entries="@array/opt_sse_type"
+                android:entryValues="@array/opt_sse_type"/>
+        />
+        <CheckBoxPreference
+                android:key="client.dataprotect"
+                android:title="Enable Data Protection"
+                android:defaultValue="true"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_server">
+        <EditTextPreference
+                android:key="server.hostname"
+                android:title="@string/pref_server_hostname"/>
+        <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="server.reportStat"
+                android:title="@string/pref_server_report_stat"/>
+    </PreferenceCategory>
+    <!--<PreferenceCategory android:title="@string/pref_crypto_test">
+        <ListPreference
+                android:defaultValue="1"
+                android:entries="@array/opt_num_of_exec"
+                android:entryValues="@array/opt_num_of_exec_values"
+                android:key="num_of_exec"
+                android:title="No. of Execution"/>
+        <ListPreference
+                android:defaultValue="1024"
+                android:entries="@array/opt_data_size"
+                android:entryValues="@array/opt_data_size_values"
+                android:key="data_size"
+                android:title="Data Size"/>
+        <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="alloc_mem"
+                android:title="Allocate RAM before test(s)"/>
+
+        <CheckBoxPreference
+                android:defaultValue="false"
+                android:key="explicit_gc"
+                android:title="Explicit G.C. between test(s)"/>
+    </PreferenceCategory>-->
+</PreferenceScreen>

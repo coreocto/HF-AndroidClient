@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/HF-AndroidClient.iml" filepath="$PROJECT_DIR$/HF-AndroidClient.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/perfmon/perfmon.iml" filepath="$PROJECT_DIR$/perfmon/perfmon.iml" />
     </modules>
   </component>
 </project>
